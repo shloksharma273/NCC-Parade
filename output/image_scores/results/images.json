@@ -1,0 +1,10 @@
+{
+  "image_id": "images",
+  "total_score": 7.62,
+  "section_scores": {
+    "fingers_joined": 8.08,
+    "elbow_angle": 4.97,
+    "heels": 8.56,
+    "left_hand_attached": 8.89
+  }
+}

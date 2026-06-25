@@ -50,7 +50,59 @@ Per video, the pipeline creates:
 - `output/<video_name>/annotated_frames/` (unless disabled)
 - `output/<video_name>/raw_frames/` (optional)
 
-Each result row contains:
+## Image accuracy testing
+
+Place salute photos in `data/test_images/` and run:
+
+```bash
+python score_images.py
+```
+
+Outputs:
+- `output/image_scores/annotated/<image_id>_scored.jpg` — annotated image with section scores
+- `output/image_scores/results/<image_id>.json` — per-image score JSON
+- `output/image_scores/summary.json` — combined results
+
+Per-image JSON format:
+
+```json
+{
+  "image_id": "salute_01",
+  "total_score": 9.52,
+  "section_scores": {
+    "fingers_joined": 10.0,
+    "elbow_angle": 9.97,
+    "heels": 8.1,
+    "left_hand_attached": 10.0
+  }
+}
+```
+
+Options:
+
+```bash
+python score_images.py --input-dir data/test_images --output-dir output/image_scores --difficulty 2
+```
+
+### PDF score report
+
+Generate a PDF table from `summary.json`:
+
+```bash
+python generate_score_report.py
+```
+
+Custom paths:
+
+```bash
+python generate_score_report.py \
+  --summary output/image_scores/summary.json \
+  --images-dir data/test_images \
+  --output output/image_scores/saamne_salute_report.pdf \
+  --drill-name "Saamne Salute"
+```
+
+Video frame result rows contain:
 - `frame_index`
 - `timestamp_ms`
 - `distance_raw`

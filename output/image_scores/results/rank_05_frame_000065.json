@@ -1,0 +1,10 @@
+{
+  "image_id": "rank_05_frame_000065",
+  "total_score": 8.39,
+  "section_scores": {
+    "fingers_joined": 10.0,
+    "elbow_angle": 10.0,
+    "heels": 5.0,
+    "left_hand_attached": 8.56
+  }
+}

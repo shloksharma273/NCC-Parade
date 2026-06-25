@@ -1,0 +1,10 @@
+{
+  "image_id": "oar2",
+  "total_score": 7.23,
+  "section_scores": {
+    "fingers_joined": 10.0,
+    "elbow_angle": 10.0,
+    "heels": 0.95,
+    "left_hand_attached": 7.97
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "image_id": "front_salute",
+  "total_score": 6.16,
+  "section_scores": {
+    "fingers_joined": 0.0,
+    "elbow_angle": 10.0,
+    "heels": 6.54,
+    "left_hand_attached": 8.1
+  }
+}
