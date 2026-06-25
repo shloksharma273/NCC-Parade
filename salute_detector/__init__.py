@@ -1,0 +1,2 @@
+"""Salute detection package."""
+
