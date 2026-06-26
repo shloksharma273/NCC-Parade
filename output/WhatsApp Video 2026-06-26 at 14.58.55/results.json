@@ -1,0 +1,322 @@
+{
+  "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+  "difficulty": 2.0,
+  "summary": {
+    "kadam_tal_count": 10,
+    "total_score": 40.51,
+    "max_possible_score": 100,
+    "average_score_per_kadam_tal": 4.05
+  },
+  "peak_frames": [
+    {
+      "rank": 1,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 26,
+      "timestamp_ms": 976.26,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 74.77,
+      "knee_angle_deg": 85.04,
+      "foot_angle_deg": 118.85,
+      "grounded_knee_angle_deg": 162.21,
+      "left_elbow_angle_deg": 150.13,
+      "right_elbow_angle_deg": 156.29,
+      "left": {
+        "knee_angle_deg": 85.04,
+        "foot_angle_deg": 118.85,
+        "knee_lift_px": 74.77
+      },
+      "right": {
+        "knee_angle_deg": 162.21,
+        "foot_angle_deg": 104.38,
+        "knee_lift_px": -143.07
+      },
+      "score": {
+        "total": 4.03,
+        "peak_knee_angle": 9.56,
+        "peak_foot_angle": 0.44,
+        "grounded_leg": 3.64,
+        "hands": 2.5
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_01_frame_000026_left.jpg"
+    },
+    {
+      "rank": 2,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 47,
+      "timestamp_ms": 1764.78,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 11.82,
+      "knee_angle_deg": 93.9,
+      "foot_angle_deg": 133.06,
+      "grounded_knee_angle_deg": 140.57,
+      "left_elbow_angle_deg": 150.17,
+      "right_elbow_angle_deg": 160.52,
+      "left": {
+        "knee_angle_deg": 140.57,
+        "foot_angle_deg": 123.95,
+        "knee_lift_px": -69.57
+      },
+      "right": {
+        "knee_angle_deg": 93.9,
+        "foot_angle_deg": 133.06,
+        "knee_lift_px": 11.82
+      },
+      "score": {
+        "total": 3.3,
+        "peak_knee_angle": 9.96,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 0.0,
+        "hands": 3.22
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_02_frame_000047_right.jpg"
+    },
+    {
+      "rank": 3,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 69,
+      "timestamp_ms": 2590.85,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 107.47,
+      "knee_angle_deg": 81.56,
+      "foot_angle_deg": 132.59,
+      "grounded_knee_angle_deg": 166.43,
+      "left_elbow_angle_deg": 150.09,
+      "right_elbow_angle_deg": 169.82,
+      "left": {
+        "knee_angle_deg": 81.56,
+        "foot_angle_deg": 132.59,
+        "knee_lift_px": 107.47
+      },
+      "right": {
+        "knee_angle_deg": 166.43,
+        "foot_angle_deg": 105.81,
+        "knee_lift_px": -143.91
+      },
+      "score": {
+        "total": 4.64,
+        "peak_knee_angle": 8.23,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 5.56,
+        "hands": 4.78
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_03_frame_000069_left.jpg"
+    },
+    {
+      "rank": 4,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 86,
+      "timestamp_ms": 3229.18,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 80.51,
+      "knee_angle_deg": 91.83,
+      "foot_angle_deg": 143.36,
+      "grounded_knee_angle_deg": 169.61,
+      "left_elbow_angle_deg": 151.07,
+      "right_elbow_angle_deg": 160.31,
+      "left": {
+        "knee_angle_deg": 169.61,
+        "foot_angle_deg": 101.91,
+        "knee_lift_px": -140.48
+      },
+      "right": {
+        "knee_angle_deg": 91.83,
+        "foot_angle_deg": 143.36,
+        "knee_lift_px": 80.51
+      },
+      "score": {
+        "total": 5.09,
+        "peak_knee_angle": 10.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 7.01,
+        "hands": 3.34
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_04_frame_000086_right.jpg"
+    },
+    {
+      "rank": 5,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 109,
+      "timestamp_ms": 4092.8,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 110.85,
+      "knee_angle_deg": 77.53,
+      "foot_angle_deg": 133.96,
+      "grounded_knee_angle_deg": 166.54,
+      "left_elbow_angle_deg": 151.76,
+      "right_elbow_angle_deg": 164.69,
+      "left": {
+        "knee_angle_deg": 77.53,
+        "foot_angle_deg": 133.96,
+        "knee_lift_px": 110.85
+      },
+      "right": {
+        "knee_angle_deg": 166.54,
+        "foot_angle_deg": 113.18,
+        "knee_lift_px": -148.49
+      },
+      "score": {
+        "total": 4.12,
+        "peak_knee_angle": 6.69,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 5.61,
+        "hands": 4.2
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_05_frame_000109_left.jpg"
+    },
+    {
+      "rank": 6,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 133,
+      "timestamp_ms": 4993.97,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 81.06,
+      "knee_angle_deg": 81.88,
+      "foot_angle_deg": 134.58,
+      "grounded_knee_angle_deg": 165.99,
+      "left_elbow_angle_deg": 154.91,
+      "right_elbow_angle_deg": 163.23,
+      "left": {
+        "knee_angle_deg": 165.99,
+        "foot_angle_deg": 111.75,
+        "knee_lift_px": -142.18
+      },
+      "right": {
+        "knee_angle_deg": 81.88,
+        "foot_angle_deg": 134.58,
+        "knee_lift_px": 81.06
+      },
+      "score": {
+        "total": 4.55,
+        "peak_knee_angle": 8.35,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 5.36,
+        "hands": 4.48
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_06_frame_000133_right.jpg"
+    },
+    {
+      "rank": 7,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 157,
+      "timestamp_ms": 5895.13,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 103.51,
+      "knee_angle_deg": 66.55,
+      "foot_angle_deg": 119.87,
+      "grounded_knee_angle_deg": 169.7,
+      "left_elbow_angle_deg": 148.92,
+      "right_elbow_angle_deg": 169.0,
+      "left": {
+        "knee_angle_deg": 66.55,
+        "foot_angle_deg": 119.87,
+        "knee_lift_px": 103.51
+      },
+      "right": {
+        "knee_angle_deg": 169.7,
+        "foot_angle_deg": 105.48,
+        "knee_lift_px": -151.16
+      },
+      "score": {
+        "total": 3.51,
+        "peak_knee_angle": 2.5,
+        "peak_foot_angle": 0.05,
+        "grounded_leg": 7.05,
+        "hands": 4.44
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_07_frame_000157_left.jpg"
+    },
+    {
+      "rank": 8,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 178,
+      "timestamp_ms": 6683.65,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 90.5,
+      "knee_angle_deg": 71.44,
+      "foot_angle_deg": 131.1,
+      "grounded_knee_angle_deg": 140.45,
+      "left_elbow_angle_deg": 153.67,
+      "right_elbow_angle_deg": 161.25,
+      "left": {
+        "knee_angle_deg": 140.45,
+        "foot_angle_deg": 139.47,
+        "knee_lift_px": -87.26
+      },
+      "right": {
+        "knee_angle_deg": 71.44,
+        "foot_angle_deg": 131.1,
+        "knee_lift_px": 90.5
+      },
+      "score": {
+        "total": 2.08,
+        "peak_knee_angle": 4.36,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 0.0,
+        "hands": 3.94
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_08_frame_000178_right.jpg"
+    },
+    {
+      "rank": 9,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 201,
+      "timestamp_ms": 7547.27,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 96.46,
+      "knee_angle_deg": 71.02,
+      "foot_angle_deg": 123.14,
+      "grounded_knee_angle_deg": 166.41,
+      "left_elbow_angle_deg": 165.28,
+      "right_elbow_angle_deg": 167.38,
+      "left": {
+        "knee_angle_deg": 71.02,
+        "foot_angle_deg": 123.14,
+        "knee_lift_px": 96.46
+      },
+      "right": {
+        "knee_angle_deg": 166.41,
+        "foot_angle_deg": 112.44,
+        "knee_lift_px": -152.08
+      },
+      "score": {
+        "total": 4.17,
+        "peak_knee_angle": 4.21,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 5.55,
+        "hands": 6.94
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_09_frame_000201_left.jpg"
+    },
+    {
+      "rank": 10,
+      "video_name": "WhatsApp Video 2026-06-26 at 14.58.55.mp4",
+      "frame_index": 216,
+      "timestamp_ms": 8110.5,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 10.11,
+      "knee_angle_deg": 90.07,
+      "foot_angle_deg": 108.49,
+      "grounded_knee_angle_deg": 129.22,
+      "left_elbow_angle_deg": 160.41,
+      "right_elbow_angle_deg": 164.76,
+      "left": {
+        "knee_angle_deg": 90.07,
+        "foot_angle_deg": 108.49,
+        "knee_lift_px": 10.11
+      },
+      "right": {
+        "knee_angle_deg": 129.22,
+        "foot_angle_deg": 92.6,
+        "knee_lift_px": -85.18
+      },
+      "score": {
+        "total": 5.02,
+        "peak_knee_angle": 10.0,
+        "peak_foot_angle": 4.39,
+        "grounded_leg": 0.0,
+        "hands": 5.67
+      },
+      "output_image_path": "WhatsApp Video 2026-06-26 at 14.58.55/peak_frames/peak_10_frame_000216_left.jpg"
+    }
+  ]
+}

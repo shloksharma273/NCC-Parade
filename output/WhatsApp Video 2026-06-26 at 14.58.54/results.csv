@@ -1,0 +1,11 @@
+rank,video_name,frame_index,timestamp_ms,parallel_leg,parallel_thigh_angle_deg,left_thigh_angle_deg,right_thigh_angle_deg,left_knee_lift_px,right_knee_lift_px,output_image_path
+1,WhatsApp Video 2026-06-26 at 14.58.54.mp4,4,134.78,left,19.05,19.05,76.47,41.88,-142.94,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_01_frame_000004_left.jpg
+2,WhatsApp Video 2026-06-26 at 14.58.54.mp4,7,235.87,right,17.69,77.57,17.69,-127.28,28.42,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_02_frame_000007_right.jpg
+3,WhatsApp Video 2026-06-26 at 14.58.54.mp4,37,1246.75,left,16.84,16.84,79.76,30.23,-126.31,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_03_frame_000037_left.jpg
+4,WhatsApp Video 2026-06-26 at 14.58.54.mp4,49,1651.1,left,11.52,11.52,80.59,20.72,-136.27,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_04_frame_000049_left.jpg
+5,WhatsApp Video 2026-06-26 at 14.58.54.mp4,136,4582.65,left,16.99,16.99,88.78,29.73,-149.06,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_05_frame_000136_left.jpg
+6,WhatsApp Video 2026-06-26 at 14.58.54.mp4,166,5593.53,right,17.75,32.18,17.75,-44.65,33.52,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_06_frame_000166_right.jpg
+7,WhatsApp Video 2026-06-26 at 14.58.54.mp4,168,5660.92,right,12.0,74.8,12.0,-111.74,22.94,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_07_frame_000168_right.jpg
+8,WhatsApp Video 2026-06-26 at 14.58.54.mp4,181,6098.97,left,15.64,15.64,86.92,28.43,-144.82,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_08_frame_000181_left.jpg
+9,WhatsApp Video 2026-06-26 at 14.58.54.mp4,205,6907.67,right,12.75,73.16,12.75,-111.4,25.65,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_09_frame_000205_right.jpg
+10,WhatsApp Video 2026-06-26 at 14.58.54.mp4,216,7278.33,right,16.58,53.34,16.58,-108.48,40.06,WhatsApp Video 2026-06-26 at 14.58.54/parallel_frames/parallel_10_frame_000216_right.jpg
