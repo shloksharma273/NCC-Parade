@@ -1,0 +1,11 @@
+rank,video_name,frame_index,timestamp_ms,distance_raw,distance_normalized,detection_confidence,output_image_path
+1,front_salute.mp4,109,3633,35.41454496283792,1.0149168879552892,1.0,front_salute/annotated_frames/rank_01_frame_000109.jpg
+2,front_salute.mp4,57,1900,36.817733952785936,1.0473394688833715,1.0,front_salute/annotated_frames/rank_02_frame_000057.jpg
+3,front_salute.mp4,91,3033,37.93005753594055,1.0710346293057127,1.0,front_salute/annotated_frames/rank_03_frame_000091.jpg
+4,front_salute.mp4,85,2833,38.07566777158567,1.0713879819511645,1.0,front_salute/annotated_frames/rank_04_frame_000085.jpg
+5,front_salute.mp4,65,2166,37.78301647664028,1.0741047541213518,1.0,front_salute/annotated_frames/rank_05_frame_000065.jpg
+6,front_salute.mp4,97,3233,38.6154075496731,1.078702313497546,1.0,front_salute/annotated_frames/rank_06_frame_000097.jpg
+7,front_salute.mp4,76,2533,37.56149467665275,1.0798781916704292,1.0,front_salute/annotated_frames/rank_07_frame_000076.jpg
+8,front_salute.mp4,103,3433,38.33767678015663,1.0853217723040742,1.0,front_salute/annotated_frames/rank_08_frame_000103.jpg
+9,front_salute.mp4,115,3833,244.90107204537364,6.899054737775335,1.0,front_salute/annotated_frames/rank_09_frame_000115.jpg
+10,front_salute.mp4,150,5000,493.43278564643396,13.808277615522892,1.0,front_salute/annotated_frames/rank_10_frame_000150.jpg

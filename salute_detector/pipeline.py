@@ -205,7 +205,9 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         "posture_analysis_csv": None,
     }
 
-    if config.enable_posture_analysis and is_front_salute_video(video_path) and selected:
+    if config.enable_posture_analysis and (
+        config.force_posture_analysis or is_front_salute_video(video_path)
+    ) and selected:
         posture_analyses = analyze_posture_for_frames(
             video_path=video_path,
             selected_frames=selected,

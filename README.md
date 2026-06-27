@@ -1,6 +1,13 @@
-# Salute Detection Pipeline
+# NCC Drill Recognition
 
-This project detects salute candidate frames in videos by minimizing the distance between the **right index fingertip** and the **eyebrow anchor** using MediaPipe landmarks.
+Computer vision pipelines for NCC drill analysis, with a PC backend server and tablet webapp.
+
+## Drills
+
+| Drill | Package | Description |
+|-------|---------|-------------|
+| **Kadam Tal** | `knee_peak_detector/` | Detects knee peak frames, scores posture, generates PDF report |
+| **Salute** | `salute_detector/` | Finds salute candidate frames, scores posture (elbow, heels, hands) |
 
 ## Setup
 
@@ -8,121 +15,52 @@ This project detects salute candidate frames in videos by minimizing the distanc
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env   # optional: tune DIFFICULTY
 ```
 
-Set drill difficulty in `.env` (or copy from `.env.example`):
+## Run Pipelines (CLI)
+
+**Kadam tal:**
+```bash
+python main.py --drill kadam_tal --input data/your_video.mp4
+```
+
+**Salute:**
+```bash
+python main.py --drill salute --input data/front_salute.mp4
+```
+
+**Kadam tal PDF report:**
+```bash
+python generate_report.py --results output/<video>/results.json
+```
+
+## Backend Server
 
 ```bash
-# 0 = lenient, 5 = strict
-DIFFICULTY=2
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
 ```
 
-You can override per run with `--difficulty 4`.
+Create a session with `"drill_type": "salute"` or `"drill_type": "kadam_tal"`.
 
-On first run, the pipeline downloads the MediaPipe `holistic_landmarker.task` model into `models/`.
+See [backend/README.md](backend/README.md).
 
-## Run
-
-Default run (reads videos from `data/` and writes to `output/`):
+## Tablet Webapp
 
 ```bash
-python main.py
+cd tablet-webapp
+npm install
+npm run dev
 ```
 
-Example with custom options:
+See [tablet-webapp/README.md](tablet-webapp/README.md).
 
-```bash
-python main.py \
-  --input data \
-  --output-dir output \
-  --top-n 10 \
-  --every-k-frames 1 \
-  --min-detection-confidence 0.5 \
-  --temporal-nms-window 5 \
-  --save-raw-frames
+## Project Structure
+
 ```
-
-## Outputs
-
-Per video, the pipeline creates:
-- `output/<video_name>/results.json`
-- `output/<video_name>/results.csv`
-- `output/<video_name>/annotated_frames/` (unless disabled)
-- `output/<video_name>/raw_frames/` (optional)
-
-## Image accuracy testing
-
-Place salute photos in `data/test_images/` and run:
-
-```bash
-python score_images.py
+salute_detector/      # Salute detection + posture scoring
+knee_peak_detector/   # Kadam tal peak detection + scoring + PDF
+backend/              # FastAPI server (recording, ML, reports)
+tablet-webapp/        # React tablet control UI
+main.py               # Unified CLI for both drills
 ```
-
-Outputs:
-- `output/image_scores/annotated/<image_id>_scored.jpg` — annotated image with section scores
-- `output/image_scores/results/<image_id>.json` — per-image score JSON
-- `output/image_scores/summary.json` — combined results
-
-Per-image JSON format:
-
-```json
-{
-  "image_id": "salute_01",
-  "total_score": 9.52,
-  "section_scores": {
-    "fingers_joined": 10.0,
-    "elbow_angle": 9.97,
-    "heels": 8.1,
-    "left_hand_attached": 10.0
-  }
-}
-```
-
-Options:
-
-```bash
-python score_images.py --input-dir data/test_images --output-dir output/image_scores --difficulty 2
-```
-
-### PDF score report
-
-Generate a PDF table from `summary.json`:
-
-```bash
-python generate_score_report.py
-```
-
-Custom paths:
-
-```bash
-python generate_score_report.py \
-  --summary output/image_scores/summary.json \
-  --images-dir data/test_images \
-  --output output/image_scores/saamne_salute_report.pdf \
-  --drill-name "Saamne Salute"
-```
-
-Video frame result rows contain:
-- `frame_index`
-- `timestamp_ms`
-- `distance_raw`
-- `distance_normalized`
-- `detection_confidence`
-- `output_image_path`
-
-## Front salute posture analysis
-
-For front-facing salute videos (filename contains `front`), the pipeline scores the top 5 selected frames on:
-
-1. Right hand fingers and thumb joined
-2. Right elbow angle (target: 45°)
-3. Feet together (medial shoe contact) and foot angle (target: 30°)
-4. Left hand attached to the body
-
-Each check is scored out of 10 with equal weights (0.25 each) for a cumulative `weighted_score` out of 10.
-
-Outputs:
-- `output/<video_name>/posture_analysis.csv`
-- `output/<video_name>/posture_analysis.json`
-- `output/<video_name>/posture_annotated_frames/`
-

@@ -14,5 +14,6 @@ class PipelineConfig:
     temporal_nms_window: int = 5
     posture_top_n: int = 5
     enable_posture_analysis: bool = True
+    force_posture_analysis: bool = False
     difficulty: float = 2.0
 
