@@ -3,14 +3,14 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from salute_detector.config import PipelineConfig
-from salute_detector.difficulty import load_difficulty
-from salute_detector.pipeline import run_pipeline
+from knee_peak_detector.config import PipelineConfig
+from knee_peak_detector.difficulty import load_difficulty
+from knee_peak_detector.pipeline import run_pipeline
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Detect salute candidate frames using right forefinger to eyebrow distance."
+        description="Detect knee peak frames, score posture, and count kadam tal."
     )
     parser.add_argument(
         "--input",
@@ -24,7 +24,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("output"),
         help="Output directory for results and frames.",
     )
-    parser.add_argument("--top-n", type=int, default=10, help="Number of candidate frames to return per video.")
     parser.add_argument(
         "--every-k-frames",
         type=int,
@@ -35,40 +34,47 @@ def build_parser() -> argparse.ArgumentParser:
         "--min-detection-confidence",
         type=float,
         default=0.5,
-        help="MediaPipe min detection/tracking confidence.",
+        help="MediaPipe min pose detection confidence.",
     )
     parser.add_argument(
-        "--temporal-nms-window",
+        "--smooth-window",
         type=int,
         default=5,
-        help="Suppress candidates within N frames of stronger candidates.",
+        help="Moving-average window for knee lift signal smoothing.",
     )
     parser.add_argument(
-        "--save-raw-frames",
-        action="store_true",
-        help="Save raw selected frames in addition to annotated frames.",
-    )
-    parser.add_argument(
-        "--no-annotated",
-        action="store_true",
-        help="Disable saving annotated frames.",
-    )
-    parser.add_argument(
-        "--posture-top-n",
+        "--min-peak-distance",
         type=int,
-        default=5,
-        help="Number of top front-salute frames to run posture checks on.",
+        default=15,
+        help="Minimum frame distance between detected knee peaks.",
     )
     parser.add_argument(
-        "--no-posture-analysis",
-        action="store_true",
-        help="Disable posture scoring for front-facing salute videos.",
+        "--min-peak-prominence",
+        type=float,
+        default=None,
+        help="Minimum peak prominence in pixels (auto if omitted).",
+    )
+    parser.add_argument(
+        "--min-peak-prominence-ratio",
+        type=float,
+        default=0.15,
+        help="Auto prominence as a fraction of lift range when prominence px is omitted.",
     )
     parser.add_argument(
         "--difficulty",
         type=float,
         default=None,
-        help="Drill difficulty 0-5 (overrides .env DIFFICULTY). 0=lenient, 5=strict.",
+        help="Scoring difficulty 0-5 (overrides .env DIFFICULTY). 0=lenient, 5=strict.",
+    )
+    parser.add_argument(
+        "--save-raw-frames",
+        action="store_true",
+        help="Save raw peak frames in addition to annotated frames.",
+    )
+    parser.add_argument(
+        "--no-annotated",
+        action="store_true",
+        help="Disable saving annotated frames.",
     )
     return parser
 
@@ -79,10 +85,10 @@ def main() -> None:
 
     if args.every_k_frames <= 0:
         raise ValueError("--every-k-frames must be >= 1")
-    if args.top_n <= 0:
-        raise ValueError("--top-n must be >= 1")
-    if args.posture_top_n <= 0:
-        raise ValueError("--posture-top-n must be >= 1")
+    if args.smooth_window <= 0:
+        raise ValueError("--smooth-window must be >= 1")
+    if args.min_peak_distance <= 0:
+        raise ValueError("--min-peak-distance must be >= 1")
     if not (0.0 <= args.min_detection_confidence <= 1.0):
         raise ValueError("--min-detection-confidence must be between 0 and 1")
 
@@ -91,32 +97,31 @@ def main() -> None:
     config = PipelineConfig(
         input_path=args.input,
         output_dir=args.output_dir,
-        top_n=args.top_n,
         every_k_frames=args.every_k_frames,
         min_detection_confidence=args.min_detection_confidence,
         save_annotated_frames=not args.no_annotated,
         save_raw_frames=args.save_raw_frames,
-        temporal_nms_window=args.temporal_nms_window,
-        posture_top_n=args.posture_top_n,
-        enable_posture_analysis=not args.no_posture_analysis,
+        smooth_window=args.smooth_window,
+        min_peak_distance_frames=args.min_peak_distance,
+        min_peak_prominence_px=args.min_peak_prominence,
+        min_peak_prominence_ratio=args.min_peak_prominence_ratio,
         difficulty=difficulty,
     )
 
     summaries = run_pipeline(config)
-    print(f"\nSalute detection completed (difficulty={difficulty:.1f}/5).\n")
+    print(f"\nKnee peak scoring completed (difficulty={difficulty:.1f}/5).\n")
     for summary in summaries:
         print(f"Video: {summary['video']}")
         print(f"  Processed frames: {summary['processed_frames']}")
         print(f"  Valid scored frames: {summary['valid_scored_frames']}")
-        print(f"  Selected frames: {summary['selected_count']}")
+        print(f"  Kadam tal count: {summary['kadam_tal_count']}")
+        print(f"  Total score: {summary['total_score']}/{summary['kadam_tal_count'] * 10}")
+        print(f"  Average score per kadam tal: {summary['average_score']:.2f}/10")
         print(f"  JSON: {summary['results_json']}")
-        print(f"  CSV: {summary['results_csv']}")
-        if summary.get("posture_analysis_csv"):
-            print(f"  Posture JSON: {summary['posture_analysis_json']}")
-            print(f"  Posture CSV: {summary['posture_analysis_csv']}")
+        if summary.get("report_pdf"):
+            print(f"  PDF: {summary['report_pdf']}")
         print()
 
 
 if __name__ == "__main__":
     main()
-

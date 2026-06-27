@@ -1,6 +1,6 @@
-# Salute Detection Pipeline
+# Knee Peak Frame Extraction & Scoring
 
-This project detects salute candidate frames in videos by minimizing the distance between the **right index fingertip** and the **eyebrow anchor** using MediaPipe landmarks.
+Detect kadam tal peak frames, score posture against ideal form, and export results as JSON.
 
 ## Setup
 
@@ -8,121 +8,75 @@ This project detects salute candidate frames in videos by minimizing the distanc
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env   # optional: tune DIFFICULTY
 ```
-
-Set drill difficulty in `.env` (or copy from `.env.example`):
-
-```bash
-# 0 = lenient, 5 = strict
-DIFFICULTY=2
-```
-
-You can override per run with `--difficulty 4`.
-
-On first run, the pipeline downloads the MediaPipe `holistic_landmarker.task` model into `models/`.
 
 ## Run
 
-Default run (reads videos from `data/` and writes to `output/`):
-
 ```bash
 python main.py
+python main.py --difficulty 4   # stricter scoring
 ```
 
-Example with custom options:
+## Scoring (each peak frame out of 10)
 
-```bash
-python main.py \
-  --input data \
-  --output-dir output \
-  --top-n 10 \
-  --every-k-frames 1 \
-  --min-detection-confidence 0.5 \
-  --temporal-nms-window 5 \
-  --save-raw-frames
+Each kadam tal (one peak = one kadam tal) is scored on four equal-weight criteria:
+
+| Criterion | Ideal |
+|-----------|-------|
+| Peak leg knee angle | 90° (thigh to shin) |
+| Peak leg foot angle | 90° (shin to foot) |
+| Grounded leg | Straight (~180° at knee) |
+| Hands | Straight arms (~180° at elbow) |
+
+Score drops as measured angles deviate from ideal. Use `--difficulty` (0–5) or `DIFFICULTY` in `.env` to control tolerance — higher = stricter.
+
+## JSON output
+
+```json
+{
+  "video_name": "drill.mp4",
+  "difficulty": 2.0,
+  "summary": {
+    "kadam_tal_count": 10,
+    "total_score": 67.5,
+    "max_possible_score": 100,
+    "average_score_per_kadam_tal": 6.75
+  },
+  "peak_frames": [
+    {
+      "rank": 1,
+      "frame_index": 10,
+      "peak_leg": "left",
+      "knee_angle_deg": 79.88,
+      "foot_angle_deg": 123.07,
+      "grounded_knee_angle_deg": 161.15,
+      "score": {
+        "total": 6.75,
+        "peak_knee_angle": 8.2,
+        "peak_foot_angle": 5.1,
+        "grounded_leg": 7.0,
+        "hands": 6.7
+      }
+    }
+  ]
+}
 ```
 
 ## Outputs
 
-Per video, the pipeline creates:
 - `output/<video_name>/results.json`
-- `output/<video_name>/results.csv`
-- `output/<video_name>/annotated_frames/` (unless disabled)
-- `output/<video_name>/raw_frames/` (optional)
+- `output/<video_name>/peak_frames/` — annotated peak frame images with score overlay
+- `output/<video_name>/kadam_tal_report.pdf` — PDF report (auto-generated after analysis)
 
-## Image accuracy testing
+## PDF report
 
-Place salute photos in `data/test_images/` and run:
-
-```bash
-python score_images.py
-```
-
-Outputs:
-- `output/image_scores/annotated/<image_id>_scored.jpg` — annotated image with section scores
-- `output/image_scores/results/<image_id>.json` — per-image score JSON
-- `output/image_scores/summary.json` — combined results
-
-Per-image JSON format:
-
-```json
-{
-  "image_id": "salute_01",
-  "total_score": 9.52,
-  "section_scores": {
-    "fingers_joined": 10.0,
-    "elbow_angle": 9.97,
-    "heels": 8.1,
-    "left_hand_attached": 10.0
-  }
-}
-```
-
-Options:
+The PDF report is generated automatically when you run `python main.py`. You can also generate it separately:
 
 ```bash
-python score_images.py --input-dir data/test_images --output-dir output/image_scores --difficulty 2
+python generate_report.py --results "output/<video_name>/results.json"
 ```
 
-### PDF score report
-
-Generate a PDF table from `summary.json`:
-
-```bash
-python generate_score_report.py
-```
-
-Custom paths:
-
-```bash
-python generate_score_report.py \
-  --summary output/image_scores/summary.json \
-  --images-dir data/test_images \
-  --output output/image_scores/saamne_salute_report.pdf \
-  --drill-name "Saamne Salute"
-```
-
-Video frame result rows contain:
-- `frame_index`
-- `timestamp_ms`
-- `distance_raw`
-- `distance_normalized`
-- `detection_confidence`
-- `output_image_path`
-
-## Front salute posture analysis
-
-For front-facing salute videos (filename contains `front`), the pipeline scores the top 5 selected frames on:
-
-1. Right hand fingers and thumb joined
-2. Right elbow angle (target: 45°)
-3. Feet together (medial shoe contact) and foot angle (target: 30°)
-4. Left hand attached to the body
-
-Each check is scored out of 10 with equal weights (0.25 each) for a cumulative `weighted_score` out of 10.
-
-Outputs:
-- `output/<video_name>/posture_analysis.csv`
-- `output/<video_name>/posture_analysis.json`
-- `output/<video_name>/posture_annotated_frames/`
-
+The report includes:
+- Header: **Kadam Tal**, person ID, kadam tal count, average score
+- Per-frame table with frame image, individual score, and parameter score breakdown
