@@ -5,11 +5,10 @@ import { parseApiError } from "../api/client";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingState } from "../components/LoadingState";
 import { PageLayout } from "../components/PageLayout";
-import { ParameterTable } from "../components/ParameterTable";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ReportSummaryCard } from "../components/ReportSummaryCard";
+import { ScoreCard } from "../components/ScoreCard";
 import { useSessionState } from "../hooks/useSessionState";
-import { getBackendUrl, mediaUrl } from "../utils/backendUrl";
 import type { DrillReport } from "../types/report";
 
 export function ReportPage() {
@@ -52,7 +51,7 @@ export function ReportPage() {
 
   if (loading) {
     return (
-      <PageLayout title="Report">
+      <PageLayout title="Report" strip="Review Mode">
         <LoadingState message="Loading report..." />
       </PageLayout>
     );
@@ -60,7 +59,7 @@ export function ReportPage() {
 
   if (error || !report) {
     return (
-      <PageLayout title="Report" backTo="/dashboard">
+      <PageLayout title="Report" strip="Review Mode" backTo="/dashboard">
         <ErrorBanner message={error ?? "Report not available."} />
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <PrimaryButton onClick={load}>Retry</PrimaryButton>
@@ -72,71 +71,35 @@ export function ReportPage() {
     );
   }
 
-  const backend = getBackendUrl() ?? "";
-  const keyFrame = mediaUrl(backend, report.media?.key_frame_url);
-  const rawVideo = mediaUrl(backend, report.media?.raw_video_url);
-  const annotatedVideo = mediaUrl(backend, report.media?.annotated_video_url);
   const pdfDownloadUrl = getReportPdfDownloadUrl(report.session_id);
   const pdfFilename = report.media?.report_pdf_filename ?? `${report.cadet_name.replace(/\s+/g, "_")}_report.pdf`;
   const hasPdf = Boolean(report.media?.report_pdf_url || pdfDownloadUrl);
+  const displayResult = report.final_result ?? report.result;
 
   return (
-    <PageLayout title="Drill Report" backTo="/dashboard">
+    <PageLayout title="Drill Report" strip="Review Mode" backTo="/dashboard">
       <div className="space-y-6">
+        <ScoreCard result={displayResult} score={report.score} summary={report.summary} />
         <ReportSummaryCard report={report} />
 
-        {hasPdf && pdfDownloadUrl && (
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="mb-2 text-xl font-bold">PDF Report</h2>
-            <p className="mb-4 text-slate-600">
-              Download the full drill report as a PDF for sharing or printing.
-            </p>
-            <a
-              href={pdfDownloadUrl}
-              download={pdfFilename}
-              className="inline-flex min-h-14 items-center justify-center rounded-xl bg-blue-700 px-6 py-4 text-lg font-semibold text-white transition hover:bg-blue-800"
-            >
-              Download PDF Report
+        <div className="grid gap-4 sm:grid-cols-2">
+          <PrimaryButton onClick={() => navigate(`/sessions/${sessionId}/report/detailed`)}>
+            View Detailed Report
+          </PrimaryButton>
+          <PrimaryButton variant="secondary" onClick={() => navigate(`/sessions/${sessionId}/decision`)}>
+            Manual Decision
+          </PrimaryButton>
+          <PrimaryButton variant="secondary" onClick={() => navigate(`/sessions/${sessionId}/attempts`)}>
+            Attempt History
+          </PrimaryButton>
+          {hasPdf && pdfDownloadUrl && (
+            <a href={pdfDownloadUrl} download={pdfFilename} className="block">
+              <PrimaryButton variant="secondary">Save PDF Report</PrimaryButton>
             </a>
-          </div>
-        )}
-
-        <div>
-          <h2 className="mb-3 text-xl font-bold">Parameter Scores</h2>
-          <ParameterTable parameters={report.parameters} />
-        </div>
-
-        {(keyFrame || rawVideo || annotatedVideo) && (
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="mb-4 text-xl font-bold">Media</h2>
-            {keyFrame && (
-              <div className="mb-4">
-                <p className="mb-2 font-semibold">Key Frame</p>
-                <img src={keyFrame} alt="Key drill frame" className="max-h-80 rounded-xl border" />
-              </div>
-            )}
-            <div className="flex flex-wrap gap-4">
-              {rawVideo && (
-                <a href={rawVideo} target="_blank" rel="noreferrer" className="text-blue-700 underline">
-                  Raw Video
-                </a>
-              )}
-              {annotatedVideo && (
-                <a href={annotatedVideo} target="_blank" rel="noreferrer" className="text-blue-700 underline">
-                  Annotated Video
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="grid gap-4 sm:grid-cols-3">
+          )}
           <PrimaryButton onClick={handleRetake}>Retake Same Drill</PrimaryButton>
           <PrimaryButton variant="secondary" onClick={() => navigate("/sessions/new")}>
-            New Session
-          </PrimaryButton>
-          <PrimaryButton variant="secondary" onClick={() => navigate("/dashboard")}>
-            Back to Dashboard
+            New Drill
           </PrimaryButton>
         </div>
       </div>

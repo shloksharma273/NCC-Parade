@@ -11,17 +11,20 @@ class SessionRepository:
             conn.execute(
                 """
                 INSERT INTO sessions (
-                    session_id, cadet_id, cadet_name, drill_type, attempt_number,
-                    camera_id, status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    session_id, cadet_id, cadet_name, squad, unit, drill_type, attempt_number,
+                    camera_id, camera_view, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     data["session_id"],
                     data.get("cadet_id"),
                     data["cadet_name"],
+                    data.get("squad"),
+                    data.get("unit"),
                     data["drill_type"],
                     data["attempt_number"],
                     data["camera_id"],
+                    data.get("camera_view"),
                     data["status"],
                     data["created_at"],
                 ),

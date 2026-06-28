@@ -16,24 +16,36 @@ export const RESULT_LABELS: Record<string, string> = {
   pass: "Pass",
   needs_correction: "Needs Correction",
   fail: "Fail",
+  needs_human_review: "Needs Human Review",
 };
 
 export const STAGE_LABELS: Record<string, string> = {
   video_saved: "Video Saved",
-  pose_extraction: "Pose Extraction",
-  parameter_calculation: "Parameter Calculation",
-  ground_truth_comparison: "Ground Truth Comparison",
-  report_generation: "Report Generation",
+  pose_extraction: "Pose Extracted",
+  parameter_calculation: "Parameters Measured",
+  ground_truth_comparison: "Compared with Ground Truth",
+  report_generation: "Report Generated",
   completed: "Completed",
   failed: "Failed",
 };
+
+export const DRILL_OPTIONS = [
+  { value: "salute", label: "Salute", cameraView: "Front", backendSupported: true },
+  { value: "kadam_tal", label: "Kadam Tal", cameraView: "Side", backendSupported: true },
+  { value: "baju_swing", label: "Baju Swing", cameraView: "Front", backendSupported: false },
+  { value: "slow_march_track", label: "Slow March Track", cameraView: "Side", backendSupported: false },
+  { value: "tez_march", label: "Tez March", cameraView: "Side", backendSupported: false },
+  { value: "hill_march", label: "Hill March", cameraView: "Side", backendSupported: false },
+] as const;
+
+export const SUPPORTED_DRILL_TYPES = DRILL_OPTIONS.filter((d) => d.backendSupported);
 
 export function sessionStatusLabel(status: SessionStatus | string): string {
   return SESSION_STATUS_LABELS[status as SessionStatus] ?? status;
 }
 
 export function resultLabel(result: ReportResult | string): string {
-  return RESULT_LABELS[result] ?? result;
+  return RESULT_LABELS[result] ?? result.replace(/_/g, " ");
 }
 
 export function parameterStatusLabel(status: ParameterStatus | string): string {
@@ -48,18 +60,7 @@ export function parameterStatusLabel(status: ParameterStatus | string): string {
 }
 
 export function drillTypeLabel(drillType: string): string {
-  const map: Record<string, string> = {
-    kadam_tal: "Kadam Tal",
-    salute: "Salute",
-    attention: "Attention",
-    march: "March",
-  };
-  return map[drillType] ?? drillType;
+  const found = DRILL_OPTIONS.find((d) => d.value === drillType);
+  if (found) return found.label;
+  return drillType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
-export const SUPPORTED_DRILL_TYPES = [
-  { value: "kadam_tal", label: "Kadam Tal", backendSupported: true },
-  { value: "salute", label: "Salute", backendSupported: true },
-  { value: "attention", label: "Attention", backendSupported: false },
-  { value: "march", label: "March", backendSupported: false },
-];

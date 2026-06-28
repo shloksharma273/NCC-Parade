@@ -160,6 +160,20 @@ class CameraService:
     def get_latest_jpeg(self) -> bytes | None:
         return self._latest_jpeg
 
+    def capture_snapshot(self, camera_id: int | None = None) -> bytes | None:
+        from ..config import settings
+
+        cam_id = settings.camera_id if camera_id is None else camera_id
+        cap = cv2.VideoCapture(cam_id)
+        if not cap.isOpened():
+            return None
+        ok, frame = cap.read()
+        cap.release()
+        if not ok:
+            return None
+        ok, encoded = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+        return encoded.tobytes() if ok else None
+
     def iter_mjpeg(self):
         boundary = b"frame"
         while self._preview_active or self._active_session_id is not None:
