@@ -9,7 +9,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-DEFAULT_PERSON_ID = "1234"
+from drill_report_metadata import ReportMetadata, drill_type_label
 
 IMAGE_COL_WIDTH = 2.0 * inch
 SCORE_COL_WIDTH = 1.6 * inch
@@ -20,6 +20,15 @@ IMAGE_MAX_HEIGHT = 2.4 * inch
 def _load_results(results_path: Path) -> dict:
     with results_path.open(encoding="utf-8") as f:
         return json.load(f)
+
+
+def _load_metadata(results: dict, metadata: ReportMetadata | None) -> ReportMetadata:
+    if metadata is not None:
+        return metadata
+    raw = results.get("report_metadata")
+    if isinstance(raw, dict):
+        return ReportMetadata(**{k: v for k, v in raw.items() if k in ReportMetadata.__dataclass_fields__})
+    return ReportMetadata()
 
 
 def _resolve_image_path(output_dir: Path, image_rel_path: str) -> Path | None:
@@ -38,6 +47,28 @@ def _scaled_image(image_path: Path, max_width: float, max_height: float) -> Imag
     img.drawHeight *= scale
     img.hAlign = "CENTER"
     return img
+
+
+def _header_story(metadata: ReportMetadata, styles, extra_lines: list[str]) -> list:
+    title = drill_type_label(metadata.drill_type)
+    lines = [
+        Paragraph(title, styles["ReportTitle"]),
+        Paragraph(f"<b>Cadet Name:</b> {metadata.cadet_name}", styles["ReportMeta"]),
+    ]
+    if metadata.cadet_id:
+        lines.append(Paragraph(f"<b>Cadet ID:</b> {metadata.cadet_id}", styles["ReportMeta"]))
+    lines.extend(
+        [
+            Paragraph(f"<b>Session ID:</b> {metadata.session_id}", styles["ReportMeta"]),
+            Paragraph(f"<b>Attempt:</b> #{metadata.attempt_number}", styles["ReportMeta"]),
+        ]
+    )
+    if metadata.recorded_at:
+        lines.append(Paragraph(f"<b>Recorded At:</b> {metadata.recorded_at}", styles["ReportMeta"]))
+    for line in extra_lines:
+        lines.append(Paragraph(line, styles["ReportMeta"]))
+    lines.append(Spacer(1, 0.25 * inch))
+    return lines
 
 
 def _score_cell(rank: int, frame_index: int, total_score: float, styles) -> Paragraph:
@@ -63,9 +94,10 @@ def generate_pdf_report(
     results_path: Path,
     output_path: Path,
     output_dir: Path | None = None,
-    person_id: str = DEFAULT_PERSON_ID,
+    metadata: ReportMetadata | None = None,
 ) -> Path:
     results = _load_results(results_path)
+    metadata = _load_metadata(results, metadata)
     if output_dir is None:
         output_dir = results_path.parent.parent
 
@@ -91,13 +123,14 @@ def generate_pdf_report(
     styles.add(ParagraphStyle(name="CellBody", parent=styles["Normal"], fontSize=10, leading=14))
     styles.add(ParagraphStyle(name="HeaderCell", parent=styles["Normal"], fontSize=11, leading=14, textColor=colors.white))
 
-    story = [
-        Paragraph("Kadam Tal", styles["ReportTitle"]),
-        Paragraph(f"<b>Person ID:</b> {person_id}", styles["ReportMeta"]),
-        Paragraph(f"<b>Kadam Tal Count:</b> {kadam_tal_count}", styles["ReportMeta"]),
-        Paragraph(f"<b>Average Score:</b> {average_score:.2f}/10", styles["ReportMeta"]),
-        Spacer(1, 0.25 * inch),
-    ]
+    story = _header_story(
+        metadata,
+        styles,
+        extra_lines=[
+            f"<b>Kadam Tal Count:</b> {kadam_tal_count}",
+            f"<b>Average Score:</b> {average_score:.2f}/10",
+        ],
+    )
 
     table_data = [
         [

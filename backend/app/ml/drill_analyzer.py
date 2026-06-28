@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 from typing import Callable
 
+from drill_report_metadata import ReportMetadata
+
 from ..config import PROJECT_ROOT, SUPPORTED_DRILL_TYPES, settings
 from ..models.session_models import ProcessingStage
 
@@ -50,6 +52,12 @@ class DrillAnalyzer:
             return self._analyze_kadam_tal(video_path, session_id, progress_callback)
         raise ValueError(f"Drill type '{drill_type}' is not implemented yet.")
 
+    def _session_metadata(self, session_id: str) -> ReportMetadata:
+        from ..services.session_service import session_service
+
+        session = session_service.get_session(session_id)
+        return ReportMetadata.from_session(session)
+
     def _analyze_kadam_tal(
         self,
         video_path: str,
@@ -74,6 +82,7 @@ class DrillAnalyzer:
             output_dir=output_dir,
             difficulty=settings.ml_difficulty,
             save_annotated_frames=True,
+            report_metadata=self._session_metadata(session_id),
         )
 
         emit(ProcessingStage.POSE_EXTRACTION, 40, "Running pose detection on video frames.")
@@ -168,6 +177,22 @@ class DrillAnalyzer:
 
         score_0_100 = avg_weighted * 10 if posture_analyses else 0
 
+        report_pdf_path = None
+        metadata = self._session_metadata(session_id)
+        if posture_analyses:
+            from salute_detector.salute_report import generate_salute_pdf_report
+
+            pdf_path = output_dir / Path(video_path).stem / "salute_report.pdf"
+            generate_salute_pdf_report(
+                posture_analyses=posture_analyses,
+                output_path=pdf_path,
+                output_dir=output_dir,
+                metadata=metadata,
+                average_score=avg_weighted,
+                score_0_100=int(round(score_0_100)),
+            )
+            report_pdf_path = str(pdf_path)
+
         emit(ProcessingStage.COMPLETED, 100, "Analysis completed.")
 
         return {
@@ -180,6 +205,7 @@ class DrillAnalyzer:
             "key_frame_path": key_frame_path,
             "ml_results_path": str(results_path),
             "posture_analysis_path": posture_json,
+            "report_pdf_path": report_pdf_path,
             "candidate_frames": candidate_frames,
             "posture_analyses": posture_analyses,
         }

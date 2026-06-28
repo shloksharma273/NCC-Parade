@@ -265,6 +265,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
     result_payload = {
         "video_name": video_path.name,
         "difficulty": config.difficulty,
+        "report_metadata": config.report_metadata.to_dict() if config.report_metadata else None,
         "summary": {
             "kadam_tal_count": kadam_tal_count,
             "total_score": total_score,
@@ -283,6 +284,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         results_path=result_json_path,
         output_path=report_pdf_path,
         output_dir=config.output_dir,
+        metadata=config.report_metadata,
     )
 
     return {

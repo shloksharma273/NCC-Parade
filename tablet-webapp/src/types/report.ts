@@ -25,6 +25,8 @@ export type DrillReport = {
     raw_video_url?: string | null;
     annotated_video_url?: string | null;
     key_frame_url?: string | null;
+    report_pdf_url?: string | null;
+    report_pdf_filename?: string | null;
   };
   created_at: string;
   kadam_tal_count?: number | null;

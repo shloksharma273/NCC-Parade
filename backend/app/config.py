@@ -15,6 +15,7 @@ MEDIA_DIR = BACKEND_ROOT / "media"
 RAW_MEDIA_DIR = MEDIA_DIR / "raw"
 ANNOTATED_MEDIA_DIR = MEDIA_DIR / "annotated"
 FRAMES_MEDIA_DIR = MEDIA_DIR / "frames"
+REPORTS_MEDIA_DIR = MEDIA_DIR / "reports"
 REPORTS_DIR = BACKEND_ROOT / "reports"
 DATABASE_DIR = BACKEND_ROOT / "database"
 DATABASE_PATH = DATABASE_DIR / "drill_server.db"
@@ -43,6 +44,7 @@ def ensure_directories() -> None:
         RAW_MEDIA_DIR,
         ANNOTATED_MEDIA_DIR,
         FRAMES_MEDIA_DIR,
+        REPORTS_MEDIA_DIR,
         REPORTS_DIR,
         DATABASE_DIR,
         settings.ml_output_dir,

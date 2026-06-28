@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from knee_peak_detector.report import DEFAULT_PERSON_ID, generate_pdf_report
+from drill_report_metadata import ReportMetadata
+from knee_peak_detector.report import generate_pdf_report
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,12 +27,10 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Output PDF path (default: alongside results.json as kadam_tal_report.pdf).",
     )
-    parser.add_argument(
-        "--person-id",
-        type=str,
-        default=DEFAULT_PERSON_ID,
-        help=f"Person identifier shown in the report header (default: {DEFAULT_PERSON_ID}).",
-    )
+    parser.add_argument("--cadet-name", type=str, default=None, help="Cadet name for the report header.")
+    parser.add_argument("--cadet-id", type=str, default=None, help="Cadet ID for the report header.")
+    parser.add_argument("--session-id", type=str, default=None, help="Session ID for the report header.")
+    parser.add_argument("--attempt-number", type=int, default=1, help="Attempt number for the report header.")
     return parser
 
 
@@ -57,11 +56,21 @@ def main() -> None:
     if output_pdf is None:
         output_pdf = results_path.parent / "kadam_tal_report.pdf"
 
+    metadata = None
+    if any([args.cadet_name, args.cadet_id, args.session_id]):
+        metadata = ReportMetadata(
+            cadet_name=args.cadet_name or "Unknown Cadet",
+            cadet_id=args.cadet_id,
+            session_id=args.session_id or "",
+            attempt_number=args.attempt_number,
+            drill_type="kadam_tal",
+        )
+
     pdf_path = generate_pdf_report(
         results_path=results_path,
         output_path=output_pdf,
         output_dir=args.output_dir,
-        person_id=args.person_id,
+        metadata=metadata,
     )
 
     print(f"PDF report generated: {pdf_path}")

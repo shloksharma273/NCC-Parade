@@ -96,6 +96,8 @@ class ReportMedia(BaseModel):
     raw_video_url: str | None = None
     annotated_video_url: str | None = None
     key_frame_url: str | None = None
+    report_pdf_url: str | None = None
+    report_pdf_filename: str | None = None
 
 
 class DrillReport(BaseModel):

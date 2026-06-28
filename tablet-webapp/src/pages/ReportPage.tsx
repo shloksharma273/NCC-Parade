@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchReadyReport } from "../api/reportApi";
+import { fetchReadyReport, getReportPdfDownloadUrl } from "../api/reportApi";
 import { parseApiError } from "../api/client";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingState } from "../components/LoadingState";
@@ -76,11 +76,30 @@ export function ReportPage() {
   const keyFrame = mediaUrl(backend, report.media?.key_frame_url);
   const rawVideo = mediaUrl(backend, report.media?.raw_video_url);
   const annotatedVideo = mediaUrl(backend, report.media?.annotated_video_url);
+  const pdfDownloadUrl = getReportPdfDownloadUrl(report.session_id);
+  const pdfFilename = report.media?.report_pdf_filename ?? `${report.cadet_name.replace(/\s+/g, "_")}_report.pdf`;
+  const hasPdf = Boolean(report.media?.report_pdf_url || pdfDownloadUrl);
 
   return (
     <PageLayout title="Drill Report" backTo="/dashboard">
       <div className="space-y-6">
         <ReportSummaryCard report={report} />
+
+        {hasPdf && pdfDownloadUrl && (
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <h2 className="mb-2 text-xl font-bold">PDF Report</h2>
+            <p className="mb-4 text-slate-600">
+              Download the full drill report as a PDF for sharing or printing.
+            </p>
+            <a
+              href={pdfDownloadUrl}
+              download={pdfFilename}
+              className="inline-flex min-h-14 items-center justify-center rounded-xl bg-blue-700 px-6 py-4 text-lg font-semibold text-white transition hover:bg-blue-800"
+            >
+              Download PDF Report
+            </a>
+          </div>
+        )}
 
         <div>
           <h2 className="mb-3 text-xl font-bold">Parameter Scores</h2>

@@ -1,6 +1,7 @@
 import { getApiClient } from "./client";
 import type { DrillReport, ReportNotReady } from "../types/report";
 import { isDrillReport } from "../types/report";
+import { getBackendUrl } from "../utils/backendUrl";
 
 export async function getReport(sessionId: string): Promise<DrillReport | ReportNotReady> {
   const client = getApiClient();
@@ -14,4 +15,10 @@ export async function fetchReadyReport(sessionId: string): Promise<DrillReport> 
     throw new Error(data.message || "Report is still being generated. Please wait.");
   }
   return data;
+}
+
+export function getReportPdfDownloadUrl(sessionId: string): string | null {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) return null;
+  return `${backendUrl}/sessions/${sessionId}/report/pdf`;
 }

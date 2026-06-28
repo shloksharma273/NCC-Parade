@@ -17,6 +17,7 @@ class CameraService:
         self._output_path: Path | None = None
         self._preview_active = False
         self._latest_jpeg: bytes | None = None
+        self._frames_written = 0
         self._lock = threading.Lock()
 
     def check_camera(self, camera_id: int | None = None) -> bool:
@@ -83,6 +84,7 @@ class CameraService:
                 return False
             if self._video_writer is not None:
                 self._video_writer.write(frame)
+                self._frames_written += 1
             self._cache_frame(frame)
             return True
 
@@ -91,26 +93,35 @@ class CameraService:
             raise RuntimeError("RECORDING_ALREADY_ACTIVE")
 
         with self._lock:
-            if self._capture is None:
-                self._capture = self._open_capture(camera_id)
+            if self._capture is not None:
+                self._capture.release()
+                self._capture = None
+            self._preview_active = False
+            self._latest_jpeg = None
+
+            self._capture = self._open_capture(camera_id)
 
             width = int(self._capture.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(self._capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = self._capture.get(cv2.CAP_PROP_FPS) or settings.camera_fps
+            if fps <= 0:
+                fps = float(settings.camera_fps)
 
             output_path = RAW_MEDIA_DIR / f"{session_id}.mp4"
+            if output_path.exists():
+                output_path.unlink()
+
             fourcc = self._fourcc()
             writer = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
             if not writer.isOpened():
                 self._capture.release()
                 self._capture = None
-                self._preview_active = False
                 raise RuntimeError("CAMERA_NOT_FOUND")
 
             self._video_writer = writer
             self._active_session_id = session_id
             self._output_path = output_path
-            self._preview_active = False
+            self._frames_written = 0
             return output_path
 
     def write_frame(self) -> bool:
@@ -121,6 +132,7 @@ class CameraService:
             raise RuntimeError("NO_ACTIVE_RECORDING")
 
         with self._lock:
+            frames_written = self._frames_written
             if self._video_writer is not None:
                 self._video_writer.release()
                 self._video_writer = None
@@ -133,7 +145,17 @@ class CameraService:
             self._output_path = None
             self._preview_active = False
             self._latest_jpeg = None
-            return output_path
+            self._frames_written = 0
+
+        if frames_written == 0 or not output_path.exists() or output_path.stat().st_size < 1024:
+            if output_path.exists():
+                output_path.unlink(missing_ok=True)
+            raise RuntimeError(
+                "RECORDING_EMPTY: No video frames were captured. "
+                "Keep recording for at least a few seconds and ensure the camera is not in use elsewhere."
+            )
+
+        return output_path
 
     def get_latest_jpeg(self) -> bytes | None:
         return self._latest_jpeg

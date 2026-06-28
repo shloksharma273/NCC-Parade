@@ -52,7 +52,7 @@ async def start_recording(session_id: str) -> ActionResponse:
         session_service.transition(session_id, SessionStatus.READY)
 
     try:
-        await preview_service.stop_loop()
+        await preview_service.stop()
         await recording_service.start(session_id, camera_id)
     except RuntimeError as exc:
         code = str(exc)
@@ -114,10 +114,14 @@ async def stop_recording(session_id: str, background_tasks: BackgroundTasks) -> 
     try:
         video_path = await recording_service.stop()
     except RuntimeError as exc:
-        session_service.mark_failed(session_id, str(exc))
+        message = str(exc)
+        session_service.mark_failed(session_id, message)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "PROCESSING_FAILED", "message": str(exc)},
+            detail={
+                "error": "RECORDING_EMPTY" if message.startswith("RECORDING_EMPTY") else "PROCESSING_FAILED",
+                "message": message.replace("RECORDING_EMPTY: ", ""),
+            },
         ) from exc
 
     session_service.transition(

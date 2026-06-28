@@ -1,5 +1,6 @@
 import type { DrillReport } from "../types/report";
 import { drillTypeLabel, resultLabel } from "../utils/resultMapper";
+import { formatDateTime } from "../utils/formatTime";
 
 type Props = {
   report: DrillReport;
@@ -25,6 +26,17 @@ export function ReportSummaryCard({ report }: Props) {
           <p className="text-sm text-slate-500">Drill</p>
           <p className="text-xl font-semibold">{drillTypeLabel(report.drill_type)}</p>
           <p className="text-slate-600">Attempt #{report.attempt_number}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <p className="text-sm text-slate-500">Session ID</p>
+          <p className="font-mono text-sm">{report.session_id}</p>
+        </div>
+        <div>
+          <p className="text-sm text-slate-500">Report Generated</p>
+          <p className="text-sm text-slate-700">{formatDateTime(report.created_at)}</p>
         </div>
       </div>
 

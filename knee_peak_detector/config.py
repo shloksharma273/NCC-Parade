@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from drill_report_metadata import ReportMetadata
+
 
 @dataclass
 class PipelineConfig:
@@ -15,3 +17,4 @@ class PipelineConfig:
     min_peak_prominence_px: float | None = None
     min_peak_prominence_ratio: float = 0.15
     difficulty: float = 2.0
+    report_metadata: ReportMetadata | None = None
