@@ -32,13 +32,13 @@ export function ConnectionPage() {
       const normalized = normalizeBackendUrl(targetUrl);
       setBackendUrl(normalized);
       await checkHealth();
-      setSuccess("Connected to PC backend successfully.");
+      setSuccess("Connected to drill server.");
       setTimeout(() => navigate("/dashboard"), 600);
     } catch (err) {
       clearBackendUrl();
       setError(
         parseApiError(err) ||
-          "Could not connect to PC backend. Check IP address, Wi-Fi, and server status.",
+          "Unable to connect. Check that tablet and PC are on the same Wi-Fi.",
       );
     } finally {
       setLoading(false);
@@ -46,31 +46,31 @@ export function ConnectionPage() {
   };
 
   return (
-    <PageLayout title="Connect to PC Backend">
-      <div className="mx-auto max-w-xl space-y-6">
-        <p className="text-lg text-slate-600">
-          Enter the PC backend URL. Both devices must be on the same Wi-Fi network.
+    <PageLayout title="Connect to Drill Server" strip="Setup" subtitle="Manual connection fallback">
+      <div className="command-card mx-auto max-w-xl space-y-6 p-6">
+        <p className="text-lg">
+          Scan the QR code on the PC for automatic pairing. Use this screen only if manual connection is needed.
         </p>
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="rounded-xl border-2 border-[var(--color-warning)] bg-[var(--color-sand)] px-4 py-3 text-sm">
           On a tablet, do not use <code className="font-mono">127.0.0.1</code> or{" "}
           <code className="font-mono">localhost</code>. Use your PC&apos;s Wi-Fi IP, for example{" "}
           <code className="font-mono">http://192.168.29.42:8000</code>.
         </p>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-slate-700">Backend URL</span>
+          <span className="mb-2 block font-semibold">Backend URL</span>
           <input
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="http://192.168.1.20:8000"
-            className="w-full rounded-xl border border-slate-300 px-4 py-4 text-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full rounded-xl border-2 border-[var(--color-khaki)] px-4 py-4 text-lg focus:border-[var(--color-army-green)] focus:outline-none"
           />
         </label>
 
         {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
         {success && (
-          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-green-800">
+          <div className="rounded-xl border-2 border-[var(--color-success)] bg-green-50 px-4 py-4 text-[var(--color-success)]">
             {success}
           </div>
         )}
@@ -90,12 +90,12 @@ export function ConnectionPage() {
             variant="secondary"
             onClick={() => {
               clearBackendUrl();
-              setUrl("http://127.0.0.1:8000");
+              setUrl(defaultBackendUrl);
               setSuccess(null);
               setError(null);
             }}
           >
-            Clear Server
+            Clear Saved Server
           </PrimaryButton>
         )}
       </div>

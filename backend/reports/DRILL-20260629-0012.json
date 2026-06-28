@@ -1,0 +1,159 @@
+{
+  "session_id": "DRILL-20260629-0012",
+  "cadet_id": null,
+  "cadet_name": "Shllkk",
+  "squad": null,
+  "unit": null,
+  "drill_type": "kadam_tal",
+  "attempt_number": 1,
+  "score": 36,
+  "result": "fail",
+  "ai_result": "fail",
+  "instructor_decision": null,
+  "instructor_remarks": null,
+  "final_result": "fail",
+  "summary": [
+    "Detected 3 kadam tal with average score 3.62/10.",
+    "Best repetition: kadam tal #1 scored 4.03/10.",
+    "Weakest repetition: kadam tal #2 scored 3.22/10."
+  ],
+  "parameters": [
+    {
+      "name": "Peak Knee Angle",
+      "expected": "90\u00b0",
+      "actual": "0.00/10 average",
+      "score": 0.0,
+      "status": "fail",
+      "feedback": "Keep peak leg knee angle close to 90 degrees."
+    },
+    {
+      "name": "Peak Foot Angle",
+      "expected": "90\u00b0",
+      "actual": "0.00/10 average",
+      "score": 0.0,
+      "status": "fail",
+      "feedback": "Maintain 90 degree angle between shin and foot."
+    },
+    {
+      "name": "Grounded Leg",
+      "expected": "180\u00b0 (straight)",
+      "actual": "10.00/10 average",
+      "score": 1.0,
+      "status": "pass",
+      "feedback": "Good form on this parameter."
+    },
+    {
+      "name": "Hands",
+      "expected": "180\u00b0 (straight arms)",
+      "actual": "4.49/10 average",
+      "score": 0.45,
+      "status": "fail",
+      "feedback": "Keep both arms straight throughout the drill."
+    }
+  ],
+  "media": {
+    "raw_video_url": "/media/raw/DRILL-20260629-0012.mp4",
+    "annotated_video_url": null,
+    "key_frame_url": "/media/frames/DRILL-20260629-0012_key.jpg",
+    "report_pdf_url": "/media/reports/Shllkk_06-28.pdf",
+    "report_pdf_filename": "Shllkk_06-28.pdf"
+  },
+  "created_at": "2026-06-28T19:54:21+00:00",
+  "kadam_tal_count": 3,
+  "average_score_per_kadam_tal": 3.62,
+  "peak_frames": [
+    {
+      "rank": 1,
+      "video_name": "DRILL-20260629-0012.mp4",
+      "frame_index": 14,
+      "timestamp_ms": 466.67,
+      "peak_leg": "left",
+      "peak_knee_lift_px": -174.23,
+      "knee_angle_deg": 176.96,
+      "foot_angle_deg": 157.62,
+      "grounded_knee_angle_deg": 177.68,
+      "left_elbow_angle_deg": 167.34,
+      "right_elbow_angle_deg": 160.5,
+      "left": {
+        "knee_angle_deg": 176.96,
+        "foot_angle_deg": 157.62,
+        "knee_lift_px": -174.23
+      },
+      "right": {
+        "knee_angle_deg": 177.68,
+        "foot_angle_deg": 168.13,
+        "knee_lift_px": -205.5
+      },
+      "score": {
+        "total": 4.03,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 6.12
+      },
+      "output_image_path": "DRILL-20260629-0012/peak_frames/peak_01_frame_000014_left.jpg"
+    },
+    {
+      "rank": 2,
+      "video_name": "DRILL-20260629-0012.mp4",
+      "frame_index": 58,
+      "timestamp_ms": 1933.33,
+      "peak_leg": "right",
+      "peak_knee_lift_px": -169.62,
+      "knee_angle_deg": 174.99,
+      "foot_angle_deg": 170.88,
+      "grounded_knee_angle_deg": 178.04,
+      "left_elbow_angle_deg": 27.41,
+      "right_elbow_angle_deg": 162.8,
+      "left": {
+        "knee_angle_deg": 178.04,
+        "foot_angle_deg": 160.07,
+        "knee_lift_px": -188.04
+      },
+      "right": {
+        "knee_angle_deg": 174.99,
+        "foot_angle_deg": 170.88,
+        "knee_lift_px": -169.62
+      },
+      "score": {
+        "total": 3.22,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 2.87
+      },
+      "output_image_path": "DRILL-20260629-0012/peak_frames/peak_02_frame_000058_right.jpg"
+    },
+    {
+      "rank": 3,
+      "video_name": "DRILL-20260629-0012.mp4",
+      "frame_index": 114,
+      "timestamp_ms": 3800.0,
+      "peak_leg": "right",
+      "peak_knee_lift_px": -201.78,
+      "knee_angle_deg": 178.15,
+      "foot_angle_deg": 173.94,
+      "grounded_knee_angle_deg": 179.35,
+      "left_elbow_angle_deg": 45.07,
+      "right_elbow_angle_deg": 172.41,
+      "left": {
+        "knee_angle_deg": 179.35,
+        "foot_angle_deg": 161.73,
+        "knee_lift_px": -212.24
+      },
+      "right": {
+        "knee_angle_deg": 178.15,
+        "foot_angle_deg": 173.94,
+        "knee_lift_px": -201.78
+      },
+      "score": {
+        "total": 3.62,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 4.49
+      },
+      "output_image_path": "DRILL-20260629-0012/peak_frames/peak_03_frame_000114_right.jpg"
+    }
+  ]
+}

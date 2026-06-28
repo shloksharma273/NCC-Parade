@@ -38,9 +38,12 @@ class SessionService:
                 "session_id": session_id,
                 "cadet_id": request.cadet_id,
                 "cadet_name": request.cadet_name,
+                "squad": request.squad,
+                "unit": request.unit,
                 "drill_type": request.drill_type,
                 "attempt_number": attempt_number,
                 "camera_id": camera_id,
+                "camera_view": request.camera_view,
                 "status": initial_status.value,
                 "created_at": utc_now_iso(),
             }

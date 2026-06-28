@@ -15,19 +15,26 @@ const STAGE_ORDER = [
   "completed",
 ];
 
+function stageIcon(done: boolean, active: boolean): string {
+  if (done) return "✓";
+  if (active) return "⏳";
+  return "○";
+}
+
 export function ProgressStepper({ stage, progress, message }: Props) {
   const currentIndex = STAGE_ORDER.indexOf(stage);
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div className="command-card p-6">
+      <div className="rank-strip mb-4 inline-block">Analysis Progress</div>
       <div className="mb-4">
-        <div className="mb-2 flex items-center justify-between text-sm text-slate-600">
-          <span>{STAGE_LABELS[stage] ?? stage}</span>
-          <span className="font-semibold">{progress}%</span>
+        <div className="mb-2 flex items-center justify-between text-sm">
+          <span className="font-semibold">{STAGE_LABELS[stage] ?? stage}</span>
+          <span className="font-bold tabular-nums">{progress}%</span>
         </div>
-        <div className="h-4 overflow-hidden rounded-full bg-slate-200">
+        <div className="h-4 overflow-hidden rounded-full bg-[var(--color-sand)]">
           <div
-            className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+            className="h-full rounded-full bg-[var(--color-army-green)] transition-all duration-500"
             style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
           />
         </div>
@@ -35,26 +42,27 @@ export function ProgressStepper({ stage, progress, message }: Props) {
 
       <p className="mb-6 text-base text-slate-700">{message}</p>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <ul className="space-y-2">
         {STAGE_ORDER.filter((s) => s !== "completed").map((step, index) => {
           const done = currentIndex > index || stage === "completed";
           const active = step === stage;
           return (
-            <div
+            <li
               key={step}
-              className={`rounded-lg px-3 py-2 text-sm ${
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base ${
                 done
-                  ? "bg-green-50 text-green-800"
+                  ? "bg-green-50 text-[var(--color-success)]"
                   : active
-                    ? "bg-indigo-50 font-semibold text-indigo-800"
-                    : "bg-slate-50 text-slate-500"
+                    ? "bg-[var(--color-sand)] font-semibold text-[var(--color-deep-olive)]"
+                    : "bg-white text-slate-400"
               }`}
             >
+              <span className="text-xl">{stageIcon(done, active)}</span>
               {STAGE_LABELS[step] ?? step}
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

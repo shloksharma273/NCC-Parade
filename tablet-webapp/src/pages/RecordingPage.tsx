@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { startCameraPreview, stopCameraPreview } from "../api/cameraApi";
 import { getSession, startRecording, stopRecording } from "../api/sessionApi";
@@ -26,6 +26,9 @@ export function RecordingPage() {
   const [timer, setTimer] = useState(0);
   const [recording, setRecording] = useState(false);
   const [previewActive, setPreviewActive] = useState(false);
+  const [streamKey, setStreamKey] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const previewStarted = useRef(false);
 
   const load = useCallback(async () => {
     if (!sessionId) return;
@@ -61,38 +64,33 @@ export function RecordingPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || loading) return;
 
     let cancelled = false;
 
-    const enablePreview = async () => {
-      if (session?.status === "RECORDING") {
-        setPreviewActive(true);
-        return;
-      }
-
+    const ensurePreview = async () => {
       try {
         await startCameraPreview(sessionId);
         if (!cancelled) {
+          previewStarted.current = true;
           setPreviewActive(true);
+          setStreamKey((k) => k + 1);
         }
       } catch (err) {
-        if (!cancelled) {
-          setError(parseApiError(err));
-        }
+        if (!cancelled) setError(parseApiError(err));
       }
     };
 
-    if (!loading) {
-      enablePreview();
-    }
+    ensurePreview();
 
     return () => {
       cancelled = true;
-      stopCameraPreview(sessionId).catch(() => undefined);
-      setPreviewActive(false);
+      if (previewStarted.current && sessionId) {
+        stopCameraPreview(sessionId).catch(() => undefined);
+        previewStarted.current = false;
+      }
     };
-  }, [sessionId, loading, session?.status]);
+  }, [sessionId, loading]);
 
   useEffect(() => {
     if (!recording) return;
@@ -108,6 +106,7 @@ export function RecordingPage() {
       await startRecording(sessionId);
       setRecording(true);
       setPreviewActive(true);
+      setStreamKey((k) => k + 1);
       setTimer(0);
       await load();
     } catch (err) {
@@ -120,12 +119,14 @@ export function RecordingPage() {
   const handleStop = async () => {
     if (!sessionId) return;
     setActionLoading(true);
+    setSaving(true);
     setError(null);
     try {
       await stopRecording(sessionId);
       setRecording(false);
       navigate(`/sessions/${sessionId}/processing`);
     } catch (err) {
+      setSaving(false);
       setError(parseApiError(err));
     } finally {
       setActionLoading(false);
@@ -134,7 +135,7 @@ export function RecordingPage() {
 
   if (loading) {
     return (
-      <PageLayout title="Recording">
+      <PageLayout title="Recording" strip="Operational Mode">
         <LoadingState />
       </PageLayout>
     );
@@ -142,64 +143,48 @@ export function RecordingPage() {
 
   if (!session) {
     return (
-      <PageLayout title="Recording" backTo="/dashboard">
+      <PageLayout title="Recording" strip="Operational Mode" backTo="/dashboard">
         <ErrorBanner message={error ?? "Session not found."} />
       </PageLayout>
     );
   }
 
-  const canStart = ["CREATED", "READY"].includes(session.status) && !recording;
+  const canStart = ["CREATED", "READY"].includes(session.status) && !recording && !saving;
   const canStop = session.status === "RECORDING" || recording;
 
+  const statusBanner = saving
+    ? "SAVING VIDEO"
+    : recording
+      ? `RECORDING — ${formatTime(timer)}`
+      : "READY TO RECORD";
+
   return (
-    <PageLayout title="Recording Drill" backTo="/dashboard">
+    <PageLayout
+      title="Recording Drill"
+      strip="Operational Mode"
+      subtitle={`${session.cadet_name} · ${drillTypeLabel(session.drill_type)} · Attempt #${session.attempt_number}`}
+      backTo={`/sessions/${sessionId}/readiness`}
+    >
       <div className="space-y-6">
         {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
+
+        <div className={`command-card py-4 text-center ${recording ? "bg-[var(--color-command-red)] text-white" : "bg-[var(--color-deep-olive)] text-[var(--color-sand)]"}`}>
+          <p className="font-command text-2xl font-bold tracking-wide md:text-3xl">{statusBanner}</p>
+          <div className="mt-2 flex justify-center">
+            <StatusBadge status={recording ? "RECORDING" : session.status} large />
+          </div>
+        </div>
 
         <CameraPreview
           sessionId={session.session_id}
           active={previewActive || recording}
+          streamKey={streamKey}
           label={recording ? "Recording Live Feed" : "Camera Preview"}
+          showAlignmentGuide={!recording}
         />
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-sm text-slate-500">Cadet</p>
-              <p className="text-xl font-semibold">{session.cadet_name}</p>
-              {session.cadet_id && <p className="text-slate-600">{session.cadet_id}</p>}
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Drill</p>
-              <p className="text-xl font-semibold">{drillTypeLabel(session.drill_type)}</p>
-              <p className="text-slate-600">Attempt #{session.attempt_number}</p>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-4">
-            <div>
-              <p className="text-sm text-slate-500">Session ID</p>
-              <p className="font-mono text-sm">{session.session_id}</p>
-            </div>
-            <StatusBadge status={recording ? "RECORDING" : session.status} large />
-          </div>
-
-          <div className="mt-8 text-center">
-            <p className="text-sm text-slate-500">Recording Timer</p>
-            <p className="text-5xl font-bold tabular-nums">{formatTime(timer)}</p>
-          </div>
-
-          <p className="mt-4 text-center text-slate-600">
-            {canStart
-              ? "Session created. Ready to record."
-              : canStop
-                ? "Recording in progress. Tap Stop when the drill is complete."
-                : `Status: ${session.status}`}
-          </p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <PrimaryButton onClick={handleStart} disabled={!canStart || actionLoading}>
+        <div className="grid gap-4">
+          <PrimaryButton onClick={handleStart} disabled={!canStart || actionLoading} variant="command">
             Start Recording
           </PrimaryButton>
           <PrimaryButton

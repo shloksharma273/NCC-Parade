@@ -28,6 +28,12 @@ export type DrillReport = {
     report_pdf_url?: string | null;
     report_pdf_filename?: string | null;
   };
+  ai_result?: string | null;
+  instructor_decision?: string | null;
+  instructor_remarks?: string | null;
+  final_result?: string | null;
+  squad?: string | null;
+  unit?: string | null;
   created_at: string;
   kadam_tal_count?: number | null;
   average_score_per_kadam_tal?: number | null;

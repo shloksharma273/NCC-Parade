@@ -1,0 +1,21 @@
+{
+  "name": "Drill Recognition Console",
+  "short_name": "DrillConsole",
+  "start_url": "/app/",
+  "display": "standalone",
+  "background_color": "#263315",
+  "theme_color": "#3f4f24",
+  "description": "NCC drill evaluation console for field instructors",
+  "icons": [
+    {
+      "src": "/app/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/app/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

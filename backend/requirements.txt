@@ -7,4 +7,4 @@ python-multipart>=0.0.12
 mediapipe>=0.10.14
 numpy>=1.26.0
 reportlab>=4.2.0
-Pillow>=10.0.0
+qrcode[pil]>=8.0

@@ -6,17 +6,23 @@ from pydantic import BaseModel, Field
 class CreateSessionRequest(BaseModel):
     cadet_id: str | None = None
     cadet_name: str = "Unknown Cadet"
+    squad: str | None = None
+    unit: str | None = None
     drill_type: str = "kadam_tal"
     camera_id: str = "0"
+    camera_view: str | None = None
 
 
 class SessionResponse(BaseModel):
     session_id: str
     cadet_id: str | None = None
     cadet_name: str
+    squad: str | None = None
+    unit: str | None = None
     drill_type: str
     attempt_number: int
     camera_id: str
+    camera_view: str | None = None
     status: str
     created_at: str
     started_at: str | None = None
@@ -25,6 +31,11 @@ class SessionResponse(BaseModel):
     report_path: str | None = None
     score: int | None = None
     result: str | None = None
+    ai_result: str | None = None
+    instructor_decision: str | None = None
+    instructor_remarks: str | None = None
+    decision_at: str | None = None
+    final_result: str | None = None
     error_message: str | None = None
 
 
@@ -51,11 +62,13 @@ class ProgressResponse(BaseModel):
 class SessionListItem(BaseModel):
     session_id: str
     cadet_name: str
+    cadet_id: str | None = None
     drill_type: str
     attempt_number: int
     status: str
     score: int | None = None
     result: str | None = None
+    final_result: str | None = None
     created_at: str
 
 
@@ -104,10 +117,16 @@ class DrillReport(BaseModel):
     session_id: str
     cadet_id: str | None = None
     cadet_name: str
+    squad: str | None = None
+    unit: str | None = None
     drill_type: str
     attempt_number: int
     score: int
     result: str
+    ai_result: str | None = None
+    instructor_decision: str | None = None
+    instructor_remarks: str | None = None
+    final_result: str | None = None
     summary: list[str]
     parameters: list[ReportParameter]
     media: ReportMedia
@@ -120,4 +139,18 @@ class DrillReport(BaseModel):
 class ReportNotReadyResponse(BaseModel):
     session_id: str
     status: str
+    message: str
+
+
+class InstructorDecisionRequest(BaseModel):
+    decision: str
+    remarks: str | None = None
+
+
+class InstructorDecisionResponse(BaseModel):
+    session_id: str
+    ai_result: str | None = None
+    instructor_decision: str
+    final_result: str
+    remarks: str | None = None
     message: str

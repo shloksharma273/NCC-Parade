@@ -19,8 +19,11 @@ export type SystemStatus = {
 export type CreateSessionPayload = {
   cadet_id?: string;
   cadet_name: string;
+  squad?: string;
+  unit?: string;
   drill_type: string;
   camera_id: string;
+  camera_view?: string;
 };
 
 export type CreateSessionResponse = {

@@ -51,6 +51,8 @@ class ProcessingService:
                 report_path=str(report_path),
                 score=analysis["score"],
                 result=analysis["result"],
+                ai_result=analysis["result"],
+                final_result=analysis["result"],
                 completed_at=utc_now_iso(),
                 error_message=None,
             )
