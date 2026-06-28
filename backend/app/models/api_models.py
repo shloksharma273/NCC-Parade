@@ -84,11 +84,27 @@ class HealthResponse(BaseModel):
 
 class SystemStatusResponse(BaseModel):
     backend_status: str
+    camera_type: str = "usb"
     camera_connected: bool
     camera_id: str
+    camera_host: str | None = None
+    camera_stream: str | None = None
     model_ready: bool
     active_session_id: str | None
     storage_available: bool
+    error: str | None = None
+
+
+class CameraDiagnosticsResponse(BaseModel):
+    camera_type: str
+    camera_host: str | None = None
+    rtsp_port: int | None = None
+    main_stream_configured: bool
+    sub_stream_configured: bool
+    main_stream_openable: bool
+    sub_stream_openable: bool
+    last_checked_at: str
+    message: str
 
 
 class ErrorResponse(BaseModel):

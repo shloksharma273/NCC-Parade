@@ -58,13 +58,30 @@ export function DashboardPage() {
 
         <div className="grid gap-3">
           <StatusRow label="Backend" ok={!!status && status.backend_status === "ready"} />
-          <StatusRow label="Camera" ok={!!status?.camera_connected} detail={status ? `ID ${status.camera_id}` : undefined} />
+          <StatusRow
+            label={status?.camera_type === "ip" ? "IP Camera" : "Camera"}
+            ok={!!status?.camera_connected}
+            detail={
+              status
+                ? status.camera_type === "ip"
+                  ? `${status.camera_host ?? status.camera_id} · ${status.camera_stream ?? "main"}`
+                  : `Index ${status.camera_id}`
+                : undefined
+            }
+          />
           <StatusRow label="Model" ok={!!status?.model_ready} />
           <StatusRow label="Storage" ok={!!status?.storage_available} />
         </div>
 
         {!status?.camera_connected && (
-          <ErrorBanner message="Camera is not connected. Check the camera on the PC before recording." />
+          <ErrorBanner
+            message={
+              status?.error ??
+              (status?.camera_type === "ip"
+                ? "IP camera not reachable. Check PoE switch, LAN cable, camera IP, and RTSP settings on the PC."
+                : "Camera is not connected. Check the camera on the PC before recording.")
+            }
+          />
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">

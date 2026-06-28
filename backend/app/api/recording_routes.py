@@ -38,13 +38,17 @@ async def start_recording(session_id: str) -> ActionResponse:
             },
         )
 
-    camera_id = int(session["camera_id"])
-    if not camera_service.check_camera(camera_id):
+    camera_id = int(session["camera_id"]) if session["camera_id"].isdigit() else None
+    connection = camera_service.check_camera_connection(usb_index=camera_id)
+    if not connection["camera_connected"]:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={
-                "error": "CAMERA_NOT_FOUND",
-                "message": "No camera was detected. Please check camera connection.",
+                "error": connection.get("error", "CAMERA_NOT_FOUND"),
+                "message": connection.get(
+                    "message",
+                    "No camera was detected. Please check camera connection.",
+                ),
             },
         )
 
@@ -55,15 +59,17 @@ async def start_recording(session_id: str) -> ActionResponse:
         await preview_service.stop()
         await recording_service.start(session_id, camera_id)
     except RuntimeError as exc:
-        code = str(exc)
+        raw = str(exc)
+        code = raw.split(":")[0]
         if code == "RECORDING_ALREADY_ACTIVE":
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"error": code, "message": "Another recording is already in progress."},
             ) from exc
+        message = raw.split(": ", 1)[-1] if ": " in raw else raw
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"error": "CAMERA_NOT_FOUND", "message": "Could not start camera recording."},
+            detail={"error": code, "message": message},
         ) from exc
 
     session_service.transition(session_id, SessionStatus.RECORDING, started_at=utc_now_iso())
@@ -116,12 +122,18 @@ async def stop_recording(session_id: str, background_tasks: BackgroundTasks) -> 
     except RuntimeError as exc:
         message = str(exc)
         session_service.mark_failed(session_id, message)
+        if message.startswith("RECORDING_STREAM_FAILED"):
+            error_code = "RECORDING_STREAM_FAILED"
+            user_message = "Recording stopped because the camera stream was interrupted."
+        elif message.startswith("RECORDING_EMPTY"):
+            error_code = "RECORDING_EMPTY"
+            user_message = message.replace("RECORDING_EMPTY: ", "")
+        else:
+            error_code = "PROCESSING_FAILED"
+            user_message = message
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "error": "RECORDING_EMPTY" if message.startswith("RECORDING_EMPTY") else "PROCESSING_FAILED",
-                "message": message.replace("RECORDING_EMPTY: ", ""),
-            },
+            detail={"error": error_code, "message": user_message},
         ) from exc
 
     session_service.transition(

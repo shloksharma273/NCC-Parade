@@ -9,11 +9,15 @@ export type HealthResponse = {
 
 export type SystemStatus = {
   backend_status: string;
+  camera_type: string;
   camera_connected: boolean;
   camera_id: string;
+  camera_host?: string | null;
+  camera_stream?: string | null;
   model_ready: boolean;
   active_session_id: string | null;
   storage_available: boolean;
+  error?: string | null;
 };
 
 export type CreateSessionPayload = {

@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
+from ..config import settings
 from ..models.api_models import ActionResponse
 from ..services.camera_service import camera_service
 from ..services.preview_service import preview_service
@@ -11,10 +12,14 @@ from ..services.session_service import session_service
 router = APIRouter(tags=["camera"])
 
 
+def _parse_usb_index(camera_id: str) -> int | None:
+    return int(camera_id) if camera_id.isdigit() else None
+
+
 @router.post("/sessions/{session_id}/camera/preview/start", response_model=ActionResponse)
 async def start_camera_preview(session_id: str) -> ActionResponse:
     session = session_service.get_session(session_id)
-    camera_id = int(session["camera_id"])
+    usb_index = _parse_usb_index(session["camera_id"])
 
     if camera_service.active_session_id and camera_service.active_session_id != session_id:
         raise HTTPException(
@@ -25,27 +30,29 @@ async def start_camera_preview(session_id: str) -> ActionResponse:
             },
         )
 
-    if not camera_service.check_camera(camera_id):
+    connection = camera_service.check_camera_connection(usb_index=usb_index)
+    if not connection["camera_connected"]:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={
-                "error": "CAMERA_NOT_FOUND",
-                "message": "No camera was detected. Please check camera connection.",
+                "error": connection.get("error", "CAMERA_NOT_FOUND"),
+                "message": connection.get("message", "Camera is not available."),
             },
         )
 
     try:
-        await preview_service.start(camera_id)
+        await preview_service.start(usb_index)
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={"error": str(exc), "message": "Could not start camera preview."},
+            detail={"error": str(exc).split(":")[0], "message": "Could not start camera preview."},
         ) from exc
 
+    stream_label = "sub" if settings.is_ip_camera() and settings.preview_use_substream else "main"
     return ActionResponse(
         session_id=session_id,
         status="preview",
-        message="Camera preview started.",
+        message=f"Camera preview started ({stream_label} stream).",
     )
 
 

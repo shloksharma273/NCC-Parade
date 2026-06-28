@@ -120,15 +120,32 @@ class SessionService:
         from ..config import settings
         from ..ml.drill_analyzer import drill_analyzer
 
-        camera_ok = camera_service.check_camera()
+        connection = camera_service.check_camera_connection()
+        camera_ok = connection["camera_connected"]
         active = camera_service.active_session_id
+
+        backend_status = "ready"
+        error = connection.get("error") if not camera_ok else None
+        if not camera_ok and settings.is_ip_camera():
+            backend_status = "degraded"
+
+        camera_id_display = (
+            settings.ip_camera_host
+            if settings.is_ip_camera()
+            else str(settings.camera_id)
+        )
+
         return {
-            "backend_status": "ready",
+            "backend_status": backend_status,
+            "camera_type": settings.camera_type,
             "camera_connected": camera_ok,
-            "camera_id": str(settings.camera_id),
+            "camera_id": camera_id_display,
+            "camera_host": settings.ip_camera_host if settings.is_ip_camera() else None,
+            "camera_stream": camera_service.active_stream_label if camera_ok else settings.ip_camera_active_stream,
             "model_ready": drill_analyzer.model_ready,
             "active_session_id": active,
             "storage_available": storage_service.storage_available(),
+            "error": connection.get("message") if error else None,
         }
 
 

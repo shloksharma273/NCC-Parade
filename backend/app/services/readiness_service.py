@@ -73,15 +73,16 @@ class ReadinessService:
 
     def session_readiness(self, session_id: str) -> dict:
         session = session_service.get_session(session_id)
-        camera_id = int(session["camera_id"])
-        camera_ok = camera_service.check_camera(camera_id)
+        usb_index = int(session["camera_id"]) if str(session["camera_id"]).isdigit() else None
+        connection = camera_service.check_camera_connection(usb_index=usb_index)
+        camera_ok = connection["camera_connected"]
 
         checks = [
             self._check(
                 "camera_connected",
                 "Camera Connected",
                 "pass" if camera_ok else "fail",
-                "Camera is connected." if camera_ok else f"Camera {camera_id} not available. Check connection.",
+                connection.get("message", "Camera not available."),
             ),
         ]
 
@@ -91,7 +92,7 @@ class ReadinessService:
             "drill_type": session["drill_type"],
             "can_record": camera_ok,
             "checks": checks,
-            "message": "Camera ready." if camera_ok else "Camera not connected. Check the camera on the PC.",
+            "message": "Camera ready." if camera_ok else connection.get("message", "Camera not connected."),
         }
 
 

@@ -48,11 +48,37 @@ Interactive API docs: `http://<PC_LOCAL_IP>:8000/docs`
 |----------|---------|-------------|
 | `HOST` | `0.0.0.0` | Server bind host |
 | `PORT` | `8000` | Server port |
-| `CAMERA_ID` | `0` | OpenCV camera index |
-| `CAMERA_WIDTH` | `1280` | Recording width |
-| `CAMERA_HEIGHT` | `720` | Recording height |
-| `CAMERA_FPS` | `30` | Recording FPS |
+| `CAMERA_TYPE` | `usb` | `usb` or `ip` |
+| `USB_CAMERA_INDEX` / `CAMERA_ID` | `0` | OpenCV USB camera index |
+| `IP_CAMERA_HOST` | — | IP camera LAN address |
+| `IP_CAMERA_RTSP_MAIN` | — | Main RTSP URL (recording + ML) |
+| `IP_CAMERA_RTSP_SUB` | — | Sub RTSP URL (tablet preview) |
+| `PREVIEW_USE_SUBSTREAM` | `true` | Use sub stream for preview when available |
+| `RECORDING_FPS` / `CAMERA_FPS` | `30` | Recording frame rate |
+| `RECORDING_WIDTH` / `CAMERA_WIDTH` | `1280` | Recording width |
+| `RECORDING_HEIGHT` / `CAMERA_HEIGHT` | `720` | Recording height |
 | `DIFFICULTY` | `2` | ML scoring difficulty (0–5) |
+
+Copy `backend/.env.example` to `backend/.env` and set RTSP URLs for IP camera mode.
+
+### IP Camera Setup (Secureye / PoE LAN)
+
+1. Connect camera → PoE switch → PC (same LAN as tablet).
+2. Confirm RTSP URL in VLC: **Media → Open Network Stream**.
+3. Set in `backend/.env`:
+
+```env
+CAMERA_TYPE=ip
+IP_CAMERA_RTSP_MAIN=rtsp://admin:password@192.168.1.50:554/main
+IP_CAMERA_RTSP_SUB=rtsp://admin:password@192.168.1.50:554/sub
+PREVIEW_USE_SUBSTREAM=true
+```
+
+4. Test endpoints:
+   - `GET /status`
+   - `GET /camera/diagnostics`
+   - `GET /camera/snapshot`
+
 
 ## Supported Drill Types
 
