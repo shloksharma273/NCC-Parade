@@ -15,7 +15,11 @@ import {
 export function ConnectionPage() {
   const navigate = useNavigate();
   const saved = getBackendUrl() ?? "";
-  const [url, setUrl] = useState(saved || "http://127.0.0.1:8000");
+  const defaultBackendUrl =
+    typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+      ? `http://${window.location.hostname}:8000`
+      : "http://127.0.0.1:8000";
+  const [url, setUrl] = useState(saved || defaultBackendUrl);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -46,6 +50,11 @@ export function ConnectionPage() {
       <div className="mx-auto max-w-xl space-y-6">
         <p className="text-lg text-slate-600">
           Enter the PC backend URL. Both devices must be on the same Wi-Fi network.
+        </p>
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          On a tablet, do not use <code className="font-mono">127.0.0.1</code> or{" "}
+          <code className="font-mono">localhost</code>. Use your PC&apos;s Wi-Fi IP, for example{" "}
+          <code className="font-mono">http://192.168.29.42:8000</code>.
         </p>
 
         <label className="block">

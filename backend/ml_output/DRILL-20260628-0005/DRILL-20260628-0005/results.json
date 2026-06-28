@@ -1,43 +1,102 @@
-{
-  "video_name": "DRILL-20260628-0005.mp4",
-  "difficulty": 5.0,
-  "summary": {
-    "kadam_tal_count": 1,
-    "total_score": 1.25,
-    "max_possible_score": 10,
-    "average_score_per_kadam_tal": 1.25
+[
+  {
+    "rank": 1,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 172,
+    "timestamp_ms": 5733,
+    "distance_raw": 32.4614724886735,
+    "distance_normalized": 0.9373493311337845,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_01_frame_000172.jpg"
   },
-  "peak_frames": [
-    {
-      "rank": 1,
-      "video_name": "DRILL-20260628-0005.mp4",
-      "frame_index": 21,
-      "timestamp_ms": 700.0,
-      "peak_leg": "right",
-      "peak_knee_lift_px": 140.95,
-      "knee_angle_deg": 164.38,
-      "foot_angle_deg": 158.0,
-      "grounded_knee_angle_deg": 156.52,
-      "left_elbow_angle_deg": 119.57,
-      "right_elbow_angle_deg": 177.71,
-      "left": {
-        "knee_angle_deg": 156.52,
-        "foot_angle_deg": 160.05,
-        "knee_lift_px": 135.92
-      },
-      "right": {
-        "knee_angle_deg": 164.38,
-        "foot_angle_deg": 158.0,
-        "knee_lift_px": 140.95
-      },
-      "score": {
-        "total": 1.25,
-        "peak_knee_angle": 0.0,
-        "peak_foot_angle": 0.0,
-        "grounded_leg": 0.0,
-        "hands": 5.0
-      },
-      "output_image_path": "DRILL-20260628-0005/peak_frames/peak_01_frame_000021_right.jpg"
-    }
-  ]
-}
+  {
+    "rank": 2,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 142,
+    "timestamp_ms": 4733,
+    "distance_raw": 35.83712151045753,
+    "distance_normalized": 1.0646514500827597,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_02_frame_000142.jpg"
+  },
+  {
+    "rank": 3,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 117,
+    "timestamp_ms": 3900,
+    "distance_raw": 36.13611365509427,
+    "distance_normalized": 1.10189954865288,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_03_frame_000117.jpg"
+  },
+  {
+    "rank": 4,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 90,
+    "timestamp_ms": 3000,
+    "distance_raw": 37.21310641950838,
+    "distance_normalized": 1.1273165827427336,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_04_frame_000090.jpg"
+  },
+  {
+    "rank": 5,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 54,
+    "timestamp_ms": 1800,
+    "distance_raw": 41.89169774542216,
+    "distance_normalized": 1.247838839750682,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_05_frame_000054.jpg"
+  },
+  {
+    "rank": 6,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 25,
+    "timestamp_ms": 833,
+    "distance_raw": 42.99015497090966,
+    "distance_normalized": 1.3103610804499608,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_06_frame_000025.jpg"
+  },
+  {
+    "rank": 7,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 84,
+    "timestamp_ms": 2800,
+    "distance_raw": 51.28475388689435,
+    "distance_normalized": 1.5210778767498183,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_07_frame_000084.jpg"
+  },
+  {
+    "rank": 8,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 165,
+    "timestamp_ms": 5500,
+    "distance_raw": 52.64642875855978,
+    "distance_normalized": 1.5893371500137388,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_08_frame_000165.jpg"
+  },
+  {
+    "rank": 9,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 32,
+    "timestamp_ms": 1066,
+    "distance_raw": 74.94462740130298,
+    "distance_normalized": 2.2462929342946216,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_09_frame_000032.jpg"
+  },
+  {
+    "rank": 10,
+    "video_name": "DRILL-20260628-0005.mp4",
+    "frame_index": 64,
+    "timestamp_ms": 2133,
+    "distance_raw": 74.93358697395907,
+    "distance_normalized": 2.252337808578604,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0005/annotated_frames/rank_10_frame_000064.jpg"
+  }
+]

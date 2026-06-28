@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from .api.camera_routes import router as camera_router
 from .api.recording_routes import router as recording_router
 from .api.report_routes import router as report_router
 from .api.session_routes import router as session_router
@@ -40,6 +41,7 @@ app.add_middleware(
 
 app.include_router(status_router)
 app.include_router(session_router)
+app.include_router(camera_router)
 app.include_router(recording_router)
 app.include_router(report_router)
 app.include_router(websocket_router)

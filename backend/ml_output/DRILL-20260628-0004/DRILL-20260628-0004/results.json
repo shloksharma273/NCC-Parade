@@ -1,62 +1,74 @@
-[
-  {
-    "rank": 1,
-    "video_name": "DRILL-20260628-0004.mp4",
-    "frame_index": 64,
-    "timestamp_ms": 2133,
-    "distance_raw": 19.38149072793132,
-    "distance_normalized": 0.4281979181780058,
-    "detection_confidence": 1.0,
-    "output_image_path": "DRILL-20260628-0004/annotated_frames/rank_01_frame_000064.jpg"
+{
+  "video_name": "DRILL-20260628-0004.mp4",
+  "difficulty": 2.0,
+  "summary": {
+    "kadam_tal_count": 2,
+    "total_score": 4.68,
+    "max_possible_score": 20,
+    "average_score_per_kadam_tal": 2.34
   },
-  {
-    "rank": 2,
-    "video_name": "DRILL-20260628-0004.mp4",
-    "frame_index": 92,
-    "timestamp_ms": 3066,
-    "distance_raw": 40.519215937145354,
-    "distance_normalized": 0.7518708546661899,
-    "detection_confidence": 1.0,
-    "output_image_path": "DRILL-20260628-0004/annotated_frames/rank_02_frame_000092.jpg"
-  },
-  {
-    "rank": 3,
-    "video_name": "DRILL-20260628-0004.mp4",
-    "frame_index": 113,
-    "timestamp_ms": 3766,
-    "distance_raw": 59.15926839259801,
-    "distance_normalized": 1.138568914663315,
-    "detection_confidence": 1.0,
-    "output_image_path": "DRILL-20260628-0004/annotated_frames/rank_03_frame_000113.jpg"
-  },
-  {
-    "rank": 4,
-    "video_name": "DRILL-20260628-0004.mp4",
-    "frame_index": 57,
-    "timestamp_ms": 1900,
-    "distance_raw": 67.42116924827326,
-    "distance_normalized": 1.2412251312067046,
-    "detection_confidence": 1.0,
-    "output_image_path": "DRILL-20260628-0004/annotated_frames/rank_04_frame_000057.jpg"
-  },
-  {
-    "rank": 5,
-    "video_name": "DRILL-20260628-0004.mp4",
-    "frame_index": 86,
-    "timestamp_ms": 2866,
-    "distance_raw": 78.48328582193545,
-    "distance_normalized": 1.5195182844444897,
-    "detection_confidence": 1.0,
-    "output_image_path": "DRILL-20260628-0004/annotated_frames/rank_05_frame_000086.jpg"
-  },
-  {
-    "rank": 6,
-    "video_name": "DRILL-20260628-0004.mp4",
-    "frame_index": 120,
-    "timestamp_ms": 4000,
-    "distance_raw": 91.86671673755502,
-    "distance_normalized": 1.6997273940034205,
-    "detection_confidence": 1.0,
-    "output_image_path": "DRILL-20260628-0004/annotated_frames/rank_06_frame_000120.jpg"
-  }
-]
+  "peak_frames": [
+    {
+      "rank": 1,
+      "video_name": "DRILL-20260628-0004.mp4",
+      "frame_index": 14,
+      "timestamp_ms": 466.67,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 177.41,
+      "knee_angle_deg": 73.25,
+      "foot_angle_deg": 129.25,
+      "grounded_knee_angle_deg": 158.75,
+      "left_elbow_angle_deg": 158.49,
+      "right_elbow_angle_deg": 41.32,
+      "left": {
+        "knee_angle_deg": 73.25,
+        "foot_angle_deg": 129.25,
+        "knee_lift_px": 177.41
+      },
+      "right": {
+        "knee_angle_deg": 158.75,
+        "foot_angle_deg": 167.03,
+        "knee_lift_px": -21.09
+      },
+      "score": {
+        "total": 2.32,
+        "peak_knee_angle": 5.06,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 2.07,
+        "hands": 2.14
+      },
+      "output_image_path": "DRILL-20260628-0004/peak_frames/peak_01_frame_000014_left.jpg"
+    },
+    {
+      "rank": 2,
+      "video_name": "DRILL-20260628-0004.mp4",
+      "frame_index": 79,
+      "timestamp_ms": 2633.33,
+      "peak_leg": "right",
+      "peak_knee_lift_px": -236.05,
+      "knee_angle_deg": 179.55,
+      "foot_angle_deg": 161.29,
+      "grounded_knee_angle_deg": 174.99,
+      "left_elbow_angle_deg": 16.84,
+      "right_elbow_angle_deg": 15.22,
+      "left": {
+        "knee_angle_deg": 174.99,
+        "foot_angle_deg": 177.65,
+        "knee_lift_px": -263.37
+      },
+      "right": {
+        "knee_angle_deg": 179.55,
+        "foot_angle_deg": 161.29,
+        "knee_lift_px": -236.05
+      },
+      "score": {
+        "total": 2.36,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 9.45,
+        "hands": 0.0
+      },
+      "output_image_path": "DRILL-20260628-0004/peak_frames/peak_02_frame_000079_right.jpg"
+    }
+  ]
+}

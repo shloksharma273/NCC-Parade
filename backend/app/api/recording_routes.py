@@ -5,6 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from ..models.api_models import ActionResponse, ProgressResponse
 from ..models.session_models import SessionStatus
 from ..services.camera_service import camera_service
+from ..services.preview_service import preview_service
 from ..services.processing_service import processing_service
 from ..services.recording_service import recording_service
 from ..services.session_service import session_service
@@ -51,6 +52,7 @@ async def start_recording(session_id: str) -> ActionResponse:
         session_service.transition(session_id, SessionStatus.READY)
 
     try:
+        await preview_service.stop_loop()
         await recording_service.start(session_id, camera_id)
     except RuntimeError as exc:
         code = str(exc)

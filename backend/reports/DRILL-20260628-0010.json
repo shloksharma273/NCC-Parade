@@ -1,0 +1,58 @@
+{
+  "session_id": "DRILL-20260628-0010",
+  "cadet_id": null,
+  "cadet_name": "Satyam",
+  "drill_type": "salute",
+  "attempt_number": 1,
+  "score": 84,
+  "result": "pass",
+  "summary": [
+    "Detected 10 salute candidate frame(s).",
+    "Average posture score: 84/100.",
+    "Best salute frame #3 scored 8.99/10.",
+    "Feet together and foot angle need improvement."
+  ],
+  "parameters": [
+    {
+      "name": "Fingers Joined",
+      "expected": "joined",
+      "actual": "9.96/10 average",
+      "score": 1.0,
+      "status": "pass",
+      "feedback": "Good form on this parameter."
+    },
+    {
+      "name": "Right Elbow Angle",
+      "expected": "45\u00b0",
+      "actual": "41.6\u00b0 average",
+      "score": 0.97,
+      "status": "pass",
+      "feedback": "Good form on this parameter."
+    },
+    {
+      "name": "Heels Together",
+      "expected": "feet together, ~30\u00b0",
+      "actual": "18.4\u00b0 average",
+      "score": 0.54,
+      "status": "needs_correction",
+      "feedback": "Keep heels together with correct foot angle."
+    },
+    {
+      "name": "Left Hand Attached",
+      "expected": "attached to body",
+      "actual": "8.68/10 average",
+      "score": 0.87,
+      "status": "pass",
+      "feedback": "Good form on this parameter."
+    }
+  ],
+  "media": {
+    "raw_video_url": "/media/raw/DRILL-20260628-0010.mp4",
+    "annotated_video_url": null,
+    "key_frame_url": "/media/frames/DRILL-20260628-0010_key.jpg"
+  },
+  "created_at": "2026-06-28T16:39:01+00:00",
+  "kadam_tal_count": null,
+  "average_score_per_kadam_tal": null,
+  "peak_frames": []
+}

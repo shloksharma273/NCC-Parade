@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { startCameraPreview, stopCameraPreview } from "../api/cameraApi";
 import { getSession, startRecording, stopRecording } from "../api/sessionApi";
 import { parseApiError } from "../api/client";
+import { CameraPreview } from "../components/CameraPreview";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingState } from "../components/LoadingState";
@@ -23,6 +25,7 @@ export function RecordingPage() {
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(0);
   const [recording, setRecording] = useState(false);
+  const [previewActive, setPreviewActive] = useState(false);
 
   const load = useCallback(async () => {
     if (!sessionId) return;
@@ -42,6 +45,9 @@ export function RecordingPage() {
         navigate(`/sessions/${sessionId}/processing`, { replace: true });
       } else if (data.status === "REPORT_READY") {
         navigate(`/sessions/${sessionId}/report`, { replace: true });
+      } else if (data.status === "RECORDING") {
+        setRecording(true);
+        setPreviewActive(true);
       }
     } catch (err) {
       setError(parseApiError(err));
@@ -53,6 +59,40 @@ export function RecordingPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    let cancelled = false;
+
+    const enablePreview = async () => {
+      if (session?.status === "RECORDING") {
+        setPreviewActive(true);
+        return;
+      }
+
+      try {
+        await startCameraPreview(sessionId);
+        if (!cancelled) {
+          setPreviewActive(true);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(parseApiError(err));
+        }
+      }
+    };
+
+    if (!loading) {
+      enablePreview();
+    }
+
+    return () => {
+      cancelled = true;
+      stopCameraPreview(sessionId).catch(() => undefined);
+      setPreviewActive(false);
+    };
+  }, [sessionId, loading, session?.status]);
 
   useEffect(() => {
     if (!recording) return;
@@ -67,6 +107,7 @@ export function RecordingPage() {
     try {
       await startRecording(sessionId);
       setRecording(true);
+      setPreviewActive(true);
       setTimer(0);
       await load();
     } catch (err) {
@@ -114,6 +155,12 @@ export function RecordingPage() {
     <PageLayout title="Recording Drill" backTo="/dashboard">
       <div className="space-y-6">
         {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
+
+        <CameraPreview
+          sessionId={session.session_id}
+          active={previewActive || recording}
+          label={recording ? "Recording Live Feed" : "Camera Preview"}
+        />
 
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <div className="grid gap-4 sm:grid-cols-2">

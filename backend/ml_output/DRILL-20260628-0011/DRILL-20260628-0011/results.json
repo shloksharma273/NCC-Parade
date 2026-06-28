@@ -1,0 +1,291 @@
+{
+  "video_name": "DRILL-20260628-0011.mp4",
+  "difficulty": 5.0,
+  "summary": {
+    "kadam_tal_count": 9,
+    "total_score": 30.52,
+    "max_possible_score": 90,
+    "average_score_per_kadam_tal": 3.39
+  },
+  "peak_frames": [
+    {
+      "rank": 1,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 9,
+      "timestamp_ms": 300.0,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 26.21,
+      "knee_angle_deg": 61.82,
+      "foot_angle_deg": 98.1,
+      "grounded_knee_angle_deg": 174.06,
+      "left_elbow_angle_deg": 166.3,
+      "right_elbow_angle_deg": 171.31,
+      "left": {
+        "knee_angle_deg": 174.06,
+        "foot_angle_deg": 114.41,
+        "knee_lift_px": -121.15
+      },
+      "right": {
+        "knee_angle_deg": 61.82,
+        "foot_angle_deg": 98.1,
+        "knee_lift_px": 26.21
+      },
+      "score": {
+        "total": 3.94,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 5.31,
+        "grounded_leg": 6.06,
+        "hands": 4.39
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_01_frame_000009_right.jpg"
+    },
+    {
+      "rank": 2,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 44,
+      "timestamp_ms": 1466.67,
+      "peak_leg": "right",
+      "peak_knee_lift_px": -34.48,
+      "knee_angle_deg": 96.91,
+      "foot_angle_deg": 111.43,
+      "grounded_knee_angle_deg": 125.86,
+      "left_elbow_angle_deg": 160.98,
+      "right_elbow_angle_deg": 161.68,
+      "left": {
+        "knee_angle_deg": 125.86,
+        "foot_angle_deg": 117.9,
+        "knee_lift_px": -57.75
+      },
+      "right": {
+        "knee_angle_deg": 96.91,
+        "foot_angle_deg": 111.43,
+        "knee_lift_px": -34.48
+      },
+      "score": {
+        "total": 1.56,
+        "peak_knee_angle": 6.22,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 0.0,
+        "hands": 0.0
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_02_frame_000044_right.jpg"
+    },
+    {
+      "rank": 3,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 59,
+      "timestamp_ms": 1966.67,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 37.71,
+      "knee_angle_deg": 74.71,
+      "foot_angle_deg": 110.3,
+      "grounded_knee_angle_deg": 178.03,
+      "left_elbow_angle_deg": 175.69,
+      "right_elbow_angle_deg": 171.49,
+      "left": {
+        "knee_angle_deg": 178.03,
+        "foot_angle_deg": 119.89,
+        "knee_lift_px": -119.37
+      },
+      "right": {
+        "knee_angle_deg": 74.71,
+        "foot_angle_deg": 110.3,
+        "knee_lift_px": 37.71
+      },
+      "score": {
+        "total": 4.37,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 7.48
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_03_frame_000059_right.jpg"
+    },
+    {
+      "rank": 4,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 83,
+      "timestamp_ms": 2766.67,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 29.6,
+      "knee_angle_deg": 68.57,
+      "foot_angle_deg": 106.75,
+      "grounded_knee_angle_deg": 178.63,
+      "left_elbow_angle_deg": 169.77,
+      "right_elbow_angle_deg": 163.51,
+      "left": {
+        "knee_angle_deg": 178.63,
+        "foot_angle_deg": 114.98,
+        "knee_lift_px": -119.64
+      },
+      "right": {
+        "knee_angle_deg": 68.57,
+        "foot_angle_deg": 106.75,
+        "knee_lift_px": 29.6
+      },
+      "score": {
+        "total": 3.25,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 3.0
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_04_frame_000083_right.jpg"
+    },
+    {
+      "rank": 5,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 107,
+      "timestamp_ms": 3566.67,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 42.67,
+      "knee_angle_deg": 65.42,
+      "foot_angle_deg": 108.59,
+      "grounded_knee_angle_deg": 173.91,
+      "left_elbow_angle_deg": 172.93,
+      "right_elbow_angle_deg": 166.8,
+      "left": {
+        "knee_angle_deg": 173.91,
+        "foot_angle_deg": 122.85,
+        "knee_lift_px": -121.82
+      },
+      "right": {
+        "knee_angle_deg": 65.42,
+        "foot_angle_deg": 108.59,
+        "knee_lift_px": 42.67
+      },
+      "score": {
+        "total": 2.75,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 5.91,
+        "hands": 5.07
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_05_frame_000107_right.jpg"
+    },
+    {
+      "rank": 6,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 131,
+      "timestamp_ms": 4366.67,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 41.19,
+      "knee_angle_deg": 72.6,
+      "foot_angle_deg": 110.09,
+      "grounded_knee_angle_deg": 178.38,
+      "left_elbow_angle_deg": 171.81,
+      "right_elbow_angle_deg": 179.49,
+      "left": {
+        "knee_angle_deg": 178.38,
+        "foot_angle_deg": 117.84,
+        "knee_lift_px": -117.97
+      },
+      "right": {
+        "knee_angle_deg": 72.6,
+        "foot_angle_deg": 110.09,
+        "knee_lift_px": 41.19
+      },
+      "score": {
+        "total": 4.54,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 8.16
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_06_frame_000131_right.jpg"
+    },
+    {
+      "rank": 7,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 155,
+      "timestamp_ms": 5166.67,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 45.62,
+      "knee_angle_deg": 65.73,
+      "foot_angle_deg": 110.69,
+      "grounded_knee_angle_deg": 174.11,
+      "left_elbow_angle_deg": 175.64,
+      "right_elbow_angle_deg": 169.4,
+      "left": {
+        "knee_angle_deg": 174.11,
+        "foot_angle_deg": 120.11,
+        "knee_lift_px": -119.68
+      },
+      "right": {
+        "knee_angle_deg": 65.73,
+        "foot_angle_deg": 110.69,
+        "knee_lift_px": 45.62
+      },
+      "score": {
+        "total": 3.22,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 6.11,
+        "hands": 6.78
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_07_frame_000155_right.jpg"
+    },
+    {
+      "rank": 8,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 180,
+      "timestamp_ms": 6000.0,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 46.24,
+      "knee_angle_deg": 67.48,
+      "foot_angle_deg": 123.28,
+      "grounded_knee_angle_deg": 177.07,
+      "left_elbow_angle_deg": 177.35,
+      "right_elbow_angle_deg": 173.07,
+      "left": {
+        "knee_angle_deg": 177.07,
+        "foot_angle_deg": 119.75,
+        "knee_lift_px": -118.55
+      },
+      "right": {
+        "knee_angle_deg": 67.48,
+        "foot_angle_deg": 123.28,
+        "knee_lift_px": 46.24
+      },
+      "score": {
+        "total": 4.4,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 9.07,
+        "hands": 8.52
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_08_frame_000180_right.jpg"
+    },
+    {
+      "rank": 9,
+      "video_name": "DRILL-20260628-0011.mp4",
+      "frame_index": 218,
+      "timestamp_ms": 7266.67,
+      "peak_leg": "left",
+      "peak_knee_lift_px": -11.22,
+      "knee_angle_deg": 147.56,
+      "foot_angle_deg": 145.54,
+      "grounded_knee_angle_deg": 178.11,
+      "left_elbow_angle_deg": 161.25,
+      "right_elbow_angle_deg": 158.64,
+      "left": {
+        "knee_angle_deg": 147.56,
+        "foot_angle_deg": 145.54,
+        "knee_lift_px": -11.22
+      },
+      "right": {
+        "knee_angle_deg": 178.11,
+        "foot_angle_deg": 108.3,
+        "knee_lift_px": -103.94
+      },
+      "score": {
+        "total": 2.5,
+        "peak_knee_angle": 0.0,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 0.0
+      },
+      "output_image_path": "DRILL-20260628-0011/peak_frames/peak_09_frame_000218_left.jpg"
+    }
+  ]
+}

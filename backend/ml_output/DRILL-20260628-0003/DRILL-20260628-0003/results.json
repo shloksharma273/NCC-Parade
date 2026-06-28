@@ -2,21 +2,51 @@
   {
     "rank": 1,
     "video_name": "DRILL-20260628-0003.mp4",
-    "frame_index": 61,
-    "timestamp_ms": 2033,
-    "distance_raw": 88.58948624764967,
-    "distance_normalized": 1.0062028431739738,
+    "frame_index": 59,
+    "timestamp_ms": 1966,
+    "distance_raw": 60.02037036982295,
+    "distance_normalized": 1.290868376075217,
     "detection_confidence": 1.0,
-    "output_image_path": "DRILL-20260628-0003/annotated_frames/rank_01_frame_000061.jpg"
+    "output_image_path": "DRILL-20260628-0003/annotated_frames/rank_01_frame_000059.jpg"
   },
   {
     "rank": 2,
     "video_name": "DRILL-20260628-0003.mp4",
-    "frame_index": 36,
-    "timestamp_ms": 1200,
-    "distance_raw": 272.1703739594324,
-    "distance_normalized": 3.1492356073791568,
+    "frame_index": 81,
+    "timestamp_ms": 2700,
+    "distance_raw": 60.41704273217978,
+    "distance_normalized": 1.3003047458601495,
     "detection_confidence": 1.0,
-    "output_image_path": "DRILL-20260628-0003/annotated_frames/rank_02_frame_000036.jpg"
+    "output_image_path": "DRILL-20260628-0003/annotated_frames/rank_02_frame_000081.jpg"
+  },
+  {
+    "rank": 3,
+    "video_name": "DRILL-20260628-0003.mp4",
+    "frame_index": 34,
+    "timestamp_ms": 1133,
+    "distance_raw": 58.55166157505183,
+    "distance_normalized": 1.3478494618210615,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0003/annotated_frames/rank_03_frame_000034.jpg"
+  },
+  {
+    "rank": 4,
+    "video_name": "DRILL-20260628-0003.mp4",
+    "frame_index": 87,
+    "timestamp_ms": 2900,
+    "distance_raw": 148.8840723741736,
+    "distance_normalized": 3.2038728710127606,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0003/annotated_frames/rank_04_frame_000087.jpg"
+  },
+  {
+    "rank": 5,
+    "video_name": "DRILL-20260628-0003.mp4",
+    "frame_index": 40,
+    "timestamp_ms": 1333,
+    "distance_raw": 184.9340282983868,
+    "distance_normalized": 4.216091276103538,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260628-0003/annotated_frames/rank_05_frame_000040.jpg"
   }
 ]
