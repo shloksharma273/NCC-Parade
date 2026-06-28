@@ -43,7 +43,25 @@ def init_db(db_path: Path = DATABASE_PATH) -> None:
             );
             """
         )
+        _migrate_sessions(conn)
         conn.commit()
+
+
+def _migrate_sessions(conn: sqlite3.Connection) -> None:
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(sessions)").fetchall()}
+    migrations = {
+        "squad": "TEXT",
+        "unit": "TEXT",
+        "camera_view": "TEXT",
+        "ai_result": "TEXT",
+        "instructor_decision": "TEXT",
+        "instructor_remarks": "TEXT",
+        "decision_at": "TEXT",
+        "final_result": "TEXT",
+    }
+    for column, col_type in migrations.items():
+        if column not in existing:
+            conn.execute(f"ALTER TABLE sessions ADD COLUMN {column} {col_type}")
 
 
 @contextmanager

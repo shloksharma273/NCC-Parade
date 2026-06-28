@@ -18,9 +18,12 @@ def _to_session_response(session: dict) -> SessionResponse:
         session_id=session["session_id"],
         cadet_id=session.get("cadet_id"),
         cadet_name=session["cadet_name"],
+        squad=session.get("squad"),
+        unit=session.get("unit"),
         drill_type=session["drill_type"],
         attempt_number=session["attempt_number"],
         camera_id=session["camera_id"],
+        camera_view=session.get("camera_view"),
         status=session["status"],
         created_at=session["created_at"],
         started_at=session.get("started_at"),
@@ -29,6 +32,11 @@ def _to_session_response(session: dict) -> SessionResponse:
         report_path=session.get("report_path"),
         score=session.get("score"),
         result=session.get("result"),
+        ai_result=session.get("ai_result"),
+        instructor_decision=session.get("instructor_decision"),
+        instructor_remarks=session.get("instructor_remarks"),
+        decision_at=session.get("decision_at"),
+        final_result=session.get("final_result"),
         error_message=session.get("error_message"),
     )
 
@@ -59,7 +67,8 @@ def list_sessions(
                 "attempt_number": s["attempt_number"],
                 "status": s["status"],
                 "score": s.get("score"),
-                "result": s.get("result"),
+                "result": s.get("final_result") or s.get("result"),
+                "final_result": s.get("final_result") or s.get("result"),
                 "created_at": s["created_at"],
             }
             for s in sessions

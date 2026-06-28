@@ -1,5 +1,53 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap");
 @import "tailwindcss";
 
+:root {
+  --color-army-green: #3f4f24;
+  --color-deep-olive: #263315;
+  --color-khaki: #c2b280;
+  --color-sand: #efe6c8;
+  --color-command-red: #8b1e1e;
+  --color-warning: #d99a00;
+  --color-success: #1f6b3a;
+  --color-fail: #b3261e;
+  --color-surface-light: #f7f1dc;
+  --color-surface-dark: #1e2614;
+  --color-text-dark: #171717;
+  --color-text-light: #f8f8f2;
+}
+
 body {
-  @apply bg-slate-100 text-slate-900 antialiased;
+  font-family: Inter, system-ui, sans-serif;
+  background: var(--color-surface-light);
+  color: var(--color-text-dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-command {
+  font-family: Rajdhani, Inter, sans-serif;
+  letter-spacing: 0.03em;
+}
+
+.command-card {
+  background: white;
+  border: 2px solid var(--color-khaki);
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgb(38 51 21 / 8%);
+}
+
+.command-header {
+  background: linear-gradient(180deg, var(--color-deep-olive), var(--color-army-green));
+  color: var(--color-text-light);
+  border-bottom: 3px solid var(--color-khaki);
+}
+
+.rank-strip {
+  background: var(--color-khaki);
+  color: var(--color-deep-olive);
+  font-family: Rajdhani, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
 }

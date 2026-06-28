@@ -9,11 +9,19 @@ import { ProgressStepper } from "../components/ProgressStepper";
 import { StatusBadge } from "../components/StatusBadge";
 import { useSessionProgress } from "../hooks/useSessionProgress";
 import { drillTypeLabel } from "../utils/resultMapper";
+import { useState } from "react";
+import type { Session } from "../types/session";
 
 export function ProcessingPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { progress, wsConnected } = useSessionProgress(sessionId, true);
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    getSession(sessionId).then(setSession).catch(() => undefined);
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -29,8 +37,8 @@ export function ProcessingPage() {
 
     const check = async () => {
       try {
-        const session = await getSession(sessionId);
-        if (session.status === "REPORT_READY") {
+        const s = await getSession(sessionId);
+        if (s.status === "REPORT_READY") {
           navigate(`/sessions/${sessionId}/report`, { replace: true });
         }
       } catch {
@@ -48,20 +56,25 @@ export function ProcessingPage() {
     );
   }
 
+  const drillLabel = session ? drillTypeLabel(session.drill_type) : "Drill";
+
   return (
-    <PageLayout title="Analysing Drill">
+    <PageLayout
+      title="Analysing Drill Attempt"
+      strip="Operational Mode"
+      subtitle={
+        session
+          ? `${session.cadet_name} · ${drillLabel} · Attempt #${session.attempt_number}`
+          : undefined
+      }
+    >
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm text-slate-500">Session ID</p>
-            <p className="font-mono">{sessionId}</p>
-          </div>
           <StatusBadge status={progress.status} large />
+          <p className="text-sm text-slate-600">
+            {wsConnected ? "Live updates connected" : "Polling fallback active"}
+          </p>
         </div>
-
-        <p className="text-slate-600">
-          {wsConnected ? "Live updates connected" : "Using polling fallback (WebSocket unavailable)"}
-        </p>
 
         <ProgressStepper
           stage={progress.stage}
@@ -74,18 +87,20 @@ export function ProcessingPage() {
             <ErrorBanner
               message={
                 progress.message ||
-                "Analysis failed. Please retake the drill or check camera visibility."
+                "Analysis failed. Check camera visibility and retake the drill."
               }
             />
-            <PrimaryButton onClick={() => navigate("/sessions/new")}>Retake Drill</PrimaryButton>
-            <PrimaryButton variant="secondary" onClick={() => navigate("/dashboard")}>
-              Back to Dashboard
-            </PrimaryButton>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <PrimaryButton onClick={() => navigate("/sessions/new")}>Retake Drill</PrimaryButton>
+              <PrimaryButton variant="secondary" onClick={() => navigate("/dashboard")}>
+                Back to Dashboard
+              </PrimaryButton>
+            </div>
           </>
         )}
 
         {progress.status === "PROCESSING" && (
-          <LoadingState message={`Analysing ${drillTypeLabel("kadam_tal")}...`} />
+          <LoadingState message={`Analysing ${drillLabel}...`} />
         )}
       </div>
     </PageLayout>

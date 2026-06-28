@@ -1,0 +1,82 @@
+[
+  {
+    "rank": 1,
+    "video_name": "DRILL-20260629-0014.mp4",
+    "frame_index": 18,
+    "timestamp_ms": 600,
+    "distance_raw": 135.694424945096,
+    "distance_normalized": 1.2529183539293802,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260629-0014/annotated_frames/rank_01_frame_000018.jpg"
+  },
+  {
+    "rank": 2,
+    "video_name": "DRILL-20260629-0014.mp4",
+    "frame_index": 108,
+    "timestamp_ms": 3600,
+    "distance_raw": 131.86836080237597,
+    "distance_normalized": 1.2531122866767404,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260629-0014/annotated_frames/rank_02_frame_000108.jpg"
+  },
+  {
+    "rank": 3,
+    "video_name": "DRILL-20260629-0014.mp4",
+    "frame_index": 131,
+    "timestamp_ms": 4366,
+    "distance_raw": 136.18065396478903,
+    "distance_normalized": 1.2786865729874624,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260629-0014/annotated_frames/rank_03_frame_000131.jpg"
+  },
+  {
+    "rank": 4,
+    "video_name": "DRILL-20260629-0014.mp4",
+    "frame_index": 90,
+    "timestamp_ms": 3000,
+    "distance_raw": 136.74329770884324,
+    "distance_normalized": 1.313720023333306,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260629-0014/annotated_frames/rank_04_frame_000090.jpg"
+  },
+  {
+    "rank": 5,
+    "video_name": "DRILL-20260629-0014.mp4",
+    "frame_index": 51,
+    "timestamp_ms": 1700,
+    "distance_raw": 147.04517634108004,
+    "distance_normalized": 1.4573148644880103,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260629-0014/annotated_frames/rank_05_frame_000051.jpg"
+  },
+  {
+    "rank": 6,
+    "video_name": "DRILL-20260629-0014.mp4",
+    "frame_index": 124,
+    "timestamp_ms": 4133,
+    "distance_raw": 153.68191952695184,
+    "distance_normalized": 1.4777625920676347,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260629-0014/annotated_frames/rank_06_frame_000124.jpg"
+  },
+  {
+    "rank": 7,
+    "video_name": "DRILL-20260629-0014.mp4",
+    "frame_index": 70,
+    "timestamp_ms": 2333,
+    "distance_raw": 155.34144813787466,
+    "distance_normalized": 1.5179478722539388,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260629-0014/annotated_frames/rank_07_frame_000070.jpg"
+  },
+  {
+    "rank": 8,
+    "video_name": "DRILL-20260629-0014.mp4",
+    "frame_index": 30,
+    "timestamp_ms": 1000,
+    "distance_raw": 174.37615816570226,
+    "distance_normalized": 1.7350838960905102,
+    "detection_confidence": 1.0,
+    "output_image_path": "DRILL-20260629-0014/annotated_frames/rank_08_frame_000030.jpg"
+  }
+]

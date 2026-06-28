@@ -38,8 +38,20 @@ python generate_report.py --results output/<video>/results.json
 ## Backend Server
 
 ```bash
+source .venv/bin/activate
+pip install -r backend/requirements.txt
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
 ```
+
+On startup the server prints a QR code and serves:
+
+| URL | Purpose |
+|-----|---------|
+| `http://<PC_IP>:8000/pair` | Pairing page with QR (open on PC) |
+| `http://<PC_IP>:8000/app` | Tablet webapp (scan QR to open) |
+| `http://<PC_IP>:8000/docs` | API documentation |
+
+**Tablet pairing:** Scan the terminal or `/pair` QR code from the tablet. The webapp auto-saves the backend URL — no manual IP entry needed.
 
 Create a session with `"drill_type": "salute"` or `"drill_type": "kadam_tal"`.
 
@@ -50,8 +62,12 @@ See [backend/README.md](backend/README.md).
 ```bash
 cd tablet-webapp
 npm install
-npm run dev
+npm run build   # required for /app on backend
 ```
+
+Production URL (after backend is running): `http://<PC_IP>:8000/app`
+
+Dev mode: `npm run dev` → `http://<PC_IP>:5173/app/`
 
 See [tablet-webapp/README.md](tablet-webapp/README.md).
 

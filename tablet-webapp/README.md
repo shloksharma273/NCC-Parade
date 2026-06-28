@@ -1,11 +1,11 @@
-# Tablet Webapp — Drill Recognition (Phase 2)
+# Tablet Webapp — Drill Recognition Console (Phase 3)
 
-React tablet webapp for controlling the PC backend: create sessions, start/stop recording, track processing, and view drill reports.
+Army/NCC-inspired tablet control panel for the PC backend: QR pairing, readiness checks, recording, processing, reports, manual decisions, and attempt history.
 
 ## Prerequisites
 
 - Node.js 18+
-- PC backend running (`uvicorn backend.app.main:app --host 0.0.0.0 --port 8000`)
+- PC backend running on `0.0.0.0:8000` (serves API + built webapp at `/app`)
 - Tablet and PC on the same Wi-Fi network
 
 ## Setup
@@ -13,7 +13,10 @@ React tablet webapp for controlling the PC backend: create sessions, start/stop 
 ```bash
 cd tablet-webapp
 npm install
+npm run build
 ```
+
+The backend serves the production build from `tablet-webapp/dist` at `http://<PC_IP>:8000/app`.
 
 ## Development
 
@@ -21,59 +24,78 @@ npm install
 npm run dev
 ```
 
-Open on tablet: `http://<PC_IP>:5173`
+Dev server: `http://<PC_IP>:5173/app/` (uses Vite proxy or manual backend URL).
 
-The dev server binds to `0.0.0.0` so tablets on the local network can connect.
+For field use, prefer the backend-served build after `npm run build`.
 
-## Production Build
+## QR Pairing (recommended)
 
-```bash
-npm run build
-npm run preview -- --host 0.0.0.0
-```
+1. Start backend on PC: `uvicorn backend.app.main:app --host 0.0.0.0 --port 8000`
+2. Terminal shows QR code; or open `http://<PC_IP>:8000/pair` on the PC browser
+3. Scan QR from tablet camera — opens `http://<PC_IP>:8000/app?backend=...`
+4. Webapp saves backend URL and opens the dashboard automatically
 
-Or serve `dist/` with Nginx, or mount as static files from FastAPI.
+Manual fallback: `/connect`
 
 ## Usage Flow
 
-1. **Connect** — Enter PC backend URL (e.g. `http://192.168.1.20:8000`)
-2. **Dashboard** — Verify camera, model, and storage status
-3. **New Session** — Enter cadet info and drill type (`kadam_tal` is fully supported)
-4. **Recording** — Start/stop drill recording on the PC camera
-5. **Processing** — Live WebSocket progress with polling fallback
-6. **Report** — Score, summary, parameter table, media links
-7. **Retake** — Reuse cadet/drill info for a new attempt
+```text
+Scan QR → Dashboard → New Drill → Readiness Check → Record → Processing → Report
+         ↓                                                              ↓
+    System Status                                              Detailed Report / Manual Decision / Retake
+```
+
+1. **Landing** — Auto-connect from QR query params
+2. **Dashboard** — System status + recent attempts
+3. **New Session** — Cadet metadata + drill type cards
+4. **Readiness** — Camera preview + pre-recording checks
+5. **Recording** — Large start/stop controls + alignment guide
+6. **Processing** — Stage checklist with WebSocket/polling
+7. **Report** — Pass/fail summary, PDF, retake, manual decision
+8. **Detailed Report** — Parameter table + evidence frame
+9. **Attempt History** — Prior attempts for same cadet/drill
 
 ## Pages
 
 | Route | Page |
 |-------|------|
-| `/` | Connection |
-| `/dashboard` | System status |
-| `/sessions/new` | Create session |
+| `/` | QR auto-connect landing |
+| `/connect` | Manual backend connection |
+| `/dashboard` | Command console |
+| `/admin` | System status |
+| `/sessions/new` | New drill session |
+| `/sessions/:id/readiness` | Pre-recording checks |
 | `/sessions/:id/recording` | Start/stop recording |
 | `/sessions/:id/processing` | Analysis progress |
-| `/sessions/:id/report` | Drill report |
+| `/sessions/:id/report` | Report summary |
+| `/sessions/:id/report/detailed` | Parameter + evidence view |
+| `/sessions/:id/decision` | Instructor manual override |
+| `/sessions/:id/attempts` | Attempt history |
 | `/sessions/recent` | Recent sessions list |
+
+## PWA
+
+Installable on tablet browsers via `manifest.json` (standalone mode, army-green theme).
 
 ## Backend URL Storage
 
-Saved in browser `localStorage` under key `drill_backend_url`.
+`localStorage` keys:
+
+- `drill_backend_url`
+- `drill_pairing_token` (when present in QR URL)
 
 ## Supported Drills
 
 | Drill | Backend |
 |-------|---------|
+| Salute | ✅ Supported |
 | Kadam Tal | ✅ Supported |
-| Salute | Coming soon |
-| Attention | Coming soon |
-| March | Coming soon |
+| Attention, March, Turns, Parade Rest | Coming soon (UI cards shown as disabled) |
 
 ## Tech Stack
 
 - React 19 + TypeScript
-- Vite 6
+- Vite 6 (`base: /app/`)
 - Tailwind CSS 4
-- Axios
-- React Router 7
+- Axios + React Router 7
 - Native WebSocket API
