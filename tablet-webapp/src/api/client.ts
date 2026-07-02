@@ -36,7 +36,9 @@ export function getApiClient() {
     (error: AxiosError<{ detail?: ApiError | string }>) => {
       if (!error.response) {
         throw new BackendConnectionError(
-          "Unable to connect to PC backend. Check that the PC server is running and both devices are on the same Wi-Fi.",
+          "Unable to connect to the backend server. " +
+          "If running on the same PC, ensure the backend is started and use http://127.0.0.1:8000. " +
+          "If connecting from a tablet, ensure both devices are on the same network (Wi-Fi or Ethernet) and use the PC's LAN IP.",
         );
       }
 

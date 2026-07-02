@@ -15,8 +15,14 @@ import {
 export function ConnectionPage() {
   const navigate = useNavigate();
   const saved = getBackendUrl() ?? "";
+  // When running on the same PC (localhost / 127.0.0.1) always default to
+  // loopback so it works even if no LAN IP is available.
+  // When the frontend is accessed from a tablet/remote device, default to
+  // the serving host's IP on port 8000.
   const defaultBackendUrl =
-    typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1"
       ? `http://${window.location.hostname}:8000`
       : "http://127.0.0.1:8000";
   const [url, setUrl] = useState(saved || defaultBackendUrl);
@@ -38,7 +44,7 @@ export function ConnectionPage() {
       clearBackendUrl();
       setError(
         parseApiError(err) ||
-          "Unable to connect. Check that tablet and PC are on the same Wi-Fi.",
+          "Unable to connect. Make sure the backend server is running on the PC and the URL is correct.",
       );
     } finally {
       setLoading(false);
@@ -52,9 +58,14 @@ export function ConnectionPage() {
           Scan the QR code on the PC for automatic pairing. Use this screen only if manual connection is needed.
         </p>
         <p className="rounded-xl border-2 border-[var(--color-warning)] bg-[var(--color-sand)] px-4 py-3 text-sm">
-          On a tablet, do not use <code className="font-mono">127.0.0.1</code> or{" "}
-          <code className="font-mono">localhost</code>. Use your PC&apos;s Wi-Fi IP, for example{" "}
-          <code className="font-mono">http://192.168.29.42:8000</code>.
+          <strong>Same PC:</strong> use{" "}
+          <code className="font-mono">http://127.0.0.1:8000</code> (loopback — works with
+          any network adapter, including Ethernet-only).{" "}
+          <br className="my-1" />
+          <strong>Tablet / remote device:</strong> use your PC&apos;s LAN IP instead of{" "}
+          <code className="font-mono">127.0.0.1</code>, for example{" "}
+          <code className="font-mono">http://192.168.1.100:8000</code>.
+          Check the <code className="font-mono">/pair</code> page on the PC to find the correct URL.
         </p>
 
         <label className="block">
