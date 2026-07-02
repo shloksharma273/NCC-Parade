@@ -16,3 +16,11 @@ venv/
 
 # Node
 node_modules/
+
+# database media
+backend/media
+
+#ML Outputs
+backend/ml_output
+
+backend/reports
