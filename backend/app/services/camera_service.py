@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import os
+import platform
 import threading
 import time
 from pathlib import Path
 from typing import Literal
 
+# pyrefly: ignore [missing-import]
 import cv2
+
+# On Windows, DirectShow (CAP_DSHOW) opens USB cameras ~40x faster than the
+# default MSMF backend, which enumerates all devices and can block for 15-20 s.
+_USB_BACKEND = cv2.CAP_DSHOW if platform.system() == "Windows" else cv2.CAP_ANY
 
 from ..config import RAW_MEDIA_DIR, SNAPSHOTS_MEDIA_DIR, settings
 
@@ -50,7 +56,7 @@ class CameraService:
         if isinstance(source, str):
             cap = cv2.VideoCapture(source, cv2.CAP_FFMPEG)
         else:
-            cap = cv2.VideoCapture(int(source))
+            cap = cv2.VideoCapture(int(source), _USB_BACKEND)
 
         if not cap.isOpened():
             if settings.is_ip_camera():
