@@ -10,12 +10,15 @@ from drill_detection.salute.pipeline import run_pipeline as run_salute_pipeline
 from drill_detection.kadam_tal.config import PipelineConfig as KadamTalConfig
 from drill_detection.kadam_tal.pipeline import run_pipeline as run_kadam_tal_pipeline
 
+from drill_detection.slow_march.config import PipelineConfig as SlowMarchConfig
+from drill_detection.slow_march.pipeline import run_pipeline as run_slow_march_pipeline
+
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run drill analysis pipelines (salute or kadam tal).")
+    parser = argparse.ArgumentParser(description="Run drill analysis pipelines (salute, kadam tal, or slow march).")
     parser.add_argument(
         "--drill",
-        choices=["salute", "kadam_tal"],
+        choices=["salute", "kadam_tal", "slow_march"],
         default="kadam_tal",
         help="Drill type to analyze (default: kadam_tal).",
     )
@@ -80,13 +83,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Salute: disable posture scoring.",
     )
 
-    # Kadam tal-specific
-    parser.add_argument("--smooth-window", type=int, default=5, help="Kadam tal: knee lift smoothing window.")
+    # Shared by kadam tal + slow march (signal smoothing / peak spacing)
+    parser.add_argument("--smooth-window", type=int, default=5, help="Kadam tal / slow march: signal smoothing window.")
     parser.add_argument(
         "--min-peak-distance",
         type=int,
         default=15,
-        help="Kadam tal: minimum frame distance between peaks.",
+        help="Kadam tal / slow march: minimum frame distance between peaks.",
+    )
+
+    # Slow march-specific
+    parser.add_argument(
+        "--view",
+        choices=["front", "side"],
+        default="side",
+        help="Slow march: camera view (default: side).",
     )
     return parser
 
@@ -125,6 +136,33 @@ def main() -> None:
 
     if args.smooth_window <= 0 or args.min_peak_distance <= 0:
         raise ValueError("--smooth-window and --min-peak-distance must be >= 1")
+
+    if args.drill == "slow_march":
+        config = SlowMarchConfig(
+            input_path=args.input,
+            output_dir=args.output_dir,
+            every_k_frames=args.every_k_frames,
+            min_detection_confidence=args.min_detection_confidence,
+            save_annotated_frames=not args.no_annotated,
+            save_raw_frames=args.save_raw_frames,
+            smooth_window=args.smooth_window,
+            min_peak_distance_frames=args.min_peak_distance,
+            difficulty=difficulty,
+            view=args.view,
+        )
+        summaries = run_slow_march_pipeline(config)
+        print(f"\nSlow march analysis completed (difficulty={difficulty:.1f}/5, view={args.view}).\n")
+        for summary in summaries:
+            print(f"Video: {summary['video']}")
+            print(f"  Steps (iterations): {summary['iteration_count']}")
+            print(f"  Total score: {summary['total_score']}")
+            print(f"  Average score/step: {summary['average_score']}")
+            print(f"  JSON: {summary['results_json']}")
+            if summary.get("report_pdf"):
+                print(f"  PDF: {summary['report_pdf']}")
+            print()
+        return
+
     config = KadamTalConfig(
         input_path=args.input,
         output_dir=args.output_dir,

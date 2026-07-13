@@ -30,6 +30,7 @@ class ReportMetadata:
 DRILL_TYPE_LABELS = {
     "kadam_tal": "Kadam Tal",
     "salute": "Salute",
+    "slow_march": "Slow March",
 }
 
 

@@ -1,0 +1,158 @@
+# Slow March — Mathematics of Detection & Scoring
+
+This document is the authoritative reference for every formula and threshold used by the
+`drill_detection/slow_march` package. It must stay in sync with `config.py`, `scoring.py`,
+`landmarks.py`, `geometry.py`, and `key_frame_detection.py`.
+
+## 1. Drill definition
+
+A slow, controlled parade march. At any instant one leg is **grounded** (planted, vertical,
+straight) and the other is **raised** and driven forward. At the extreme of each step a
+correct slow march shows:
+
+1. **Arms straight** — elbows ≈ 180°.
+2. **Look to the front** — head faces forward, neck upright (not turned/tilted).
+3. **Grounded leg perpendicular & straight** — support leg vertical to the ground and knee ≈ 180°.
+4. **Raised-leg foot parallel to the ground (MANDATORY)** — the airborne foot held flat.
+
+## 2. Key-frame definition & the inter-leg-angle signal
+
+There is no single key pose. **Every step extreme is a key frame**: a frame where the angle
+between the two legs is at a local maximum (leg split widest as the raised leg reaches the
+front of the step). This mirrors kadam_tal's knee-lift peak detection, but the driving signal
+is the **inter-leg angle**.
+
+For thigh vectors (pixels):
+
+```
+v_L = knee_L − hip_L
+v_R = knee_R − hip_R
+inter_leg_angle = angle_between(v_L, v_R) = degrees( arccos( (v_L · v_R) / (|v_L| |v_R|) ) )
+```
+
+Thighs are near-parallel at stance (small angle); the split widens and **peaks** at the step
+extreme.
+
+### Peak detection (copied verbatim from `kadam_tal.peak_detection`, renamed `find_step_peaks`)
+
+1. Build the per-frame `inter_leg_angle` array (NaNs → 0 so missing landmarks never win).
+2. Smooth with a moving-average box filter of width `smooth_window` (default 5).
+3. Prominence floor = `min_peak_prominence_deg` if set, else
+   `max(3.0, signal_range * min_peak_prominence_ratio)` (ratio default 0.15).
+4. A local maximum `i` qualifies if `value[i]` exceeds both neighbours and its prominence
+   (`value[i] − max(left_min, right_min)` over `±min_distance` frames) ≥ the floor, with a
+   minimum spacing of `min_peak_distance_frames` (default 15) between accepted peaks.
+
+**`iteration_count` = number of accepted key frames.** Only valid key frames count. This is a
+first-class output in `results.json` (`summary.iteration_count`), the analyzer response, and
+the PDF.
+
+## 3. Per-frame geometry (`geometry.py` / `landmarks.py`)
+
+| Quantity | Formula | Ideal |
+|---|---|---|
+| `angle_at_joint(a,b,c)` | `degrees(arccos( (a−b)·(c−b) / (\|a−b\|\|c−b\|) ))` | — |
+| `angle_between(v1,v2)` | `degrees(arccos( (v1·v2)/(\|v1\|\|v2\|) ))` | — |
+| `angle_to_vertical(v)` | `degrees(arccos( \|v_y\| / \|v\| ))` | 0° = vertical |
+| `angle_to_horizontal(v)` | `degrees(arcsin( \|v_y\| / \|v\| ))` | 0° = flat |
+
+Grounded vs raised leg uses the kadam_tal knee-lift convention
+`knee_lift_px = hip_y − knee_y` (larger ⇒ knee raised higher). **Grounded = smaller knee-lift**
+(planted, lower on screen); **raised = the other**.
+
+## 4. Scoring primitives (copied verbatim; self-contained)
+
+- `score_by_tolerance(value, target, perfect_tol, fail_tol)` — from `kadam_tal/scoring.py`.
+  Returns 10 when `|value−target| ≤ perfect_tol`, 0 when `≥ fail_tol`, linear between.
+- `score_by_max(value, perfect_max, fail_max)` — from `salute/geometry.py`.
+  Returns 10 when `value ≤ perfect_max`, 0 when `≥ fail_max`, linear between.
+
+## 5. Parameter scores (each /10)
+
+### 5.1 Arms straight (`hands`)
+```
+left_arm  = score_by_tolerance(left_elbow_angle,  180, perfect, fail)
+right_arm = score_by_tolerance(right_elbow_angle, 180, perfect, fail)
+hands     = mean(left_arm, right_arm)          # elbow = angle_at_joint(shoulder, elbow, wrist)
+```
+
+### 5.2 Look to the front (`head_front`) — two sub-checks
+```
+yaw_ratio  = (nose_x − shoulder_mid_x) / shoulder_width          # ≈ 0 facing front
+yaw_score  = score_by_max(|yaw_ratio|, perfect_max, fail_max)
+head_tilt  = angle_to_vertical(nose − shoulder_mid)              # ≈ 0 upright
+tilt_score = score_by_tolerance(head_tilt, 0, perfect, fail)
+head_front = yaw_w · yaw_score + (1 − yaw_w) · tilt_score
+```
+`yaw_w = 0.25` in **side** view (yaw unreliable — down-weighted, formula kept intact),
+`0.5` in **front** view. v1 uses the pose-nose approximation; a hook to swap in Holistic
+face-landmark yaw is marked in `landmarks.py`.
+
+### 5.3 Grounded leg perpendicular & straight (`grounded_leg`) — two sub-checks
+```
+grounded_knee = score_by_tolerance(grounded_knee_angle, 180, perfect, fail)  # angle_at_joint(hip,knee,ankle)
+grounded_vert = score_by_tolerance(grounded_vertical,     0, perfect, fail)  # angle_to_vertical(ankle − hip)
+grounded_leg  = mean(grounded_knee, grounded_vert)
+```
+
+### 5.4 Raised-leg foot parallel (`raised_foot`) — MANDATORY
+```
+f              = foot_index − heel        (raised leg)
+foot_horizontal = angle_to_horizontal(f)  = degrees(arcsin(|f_y|/|f|))   # 0° when flat
+raised_foot    = score_by_tolerance(foot_horizontal, 0, perfect, fail)
+```
+
+### 5.5 Frame total & mandatory gate (PRD §6.6 / §6.5)
+```
+weights = { hands: 0.25, head_front: 0.25, grounded_leg: 0.25, raised_foot: 0.25 }
+frame_total = Σ(param · weight)                                  # pre-gate
+
+# MANDATORY raised-foot gate — caps, does NOT zero:
+if raised_foot_is_mandatory and raised_foot < raised_foot_pass_threshold (5.0):
+    frame_total = min(frame_total, raised_foot_gate_cap (4.0))
+```
+
+### 5.6 Aggregation (`results.json.summary`)
+```
+iteration_count       = number of key frames
+total_score           = Σ frame_total over key frames
+max_possible_score    = iteration_count · 10
+average_score_per_step = total_score / iteration_count
+```
+
+## 6. Difficulty scaling (0–5, default 2.0)
+
+Reuses `scaled_tolerances(difficulty, perfect_easy, perfect_hard, fail_easy, fail_hard)`
+verbatim from kadam_tal. With `t = difficulty / 5`:
+`perfect = lerp(perfect_easy, perfect_hard, t)`, `fail = lerp(fail_easy, fail_hard, t)`.
+Lower difficulty ⇒ wider (lenient) bands; higher ⇒ tighter (strict) — so lowering
+`--difficulty` measurably raises scores and raising it lowers them.
+
+| Parameter | perfect easy→hard | fail easy→hard |
+|---|---|---|
+| Arms (elbow vs 180°) | 8 → 3 | 45 → 18 |
+| Head yaw ratio (max) | 0.20 → 0.06 | 0.55 → 0.30 |
+| Head tilt (vs 0°) | 8 → 3 | 35 → 15 |
+| Grounded knee (vs 180°) | 6 → 2 | 35 → 12 |
+| Grounded vertical (vs 0°) | 8 → 3 | 35 → 15 |
+| Raised foot horizontal (vs 0°) | 6 → 3 | 30 → 12 |
+
+## 7. Worked examples (difficulty = 2.0 ⇒ t = 0.4)
+
+Interpolated bands at t=0.4: arms perfect 6.0 / fail 34.2; head-yaw perfect_max 0.144 /
+fail_max 0.45; head-tilt perfect 6.0 / fail 27.0; grounded-knee perfect 4.4 / fail 25.8;
+grounded-vertical perfect 6.0 / fail 27.0; raised-foot perfect 4.8 / fail 22.8.
+
+### 7.1 A good step (side view)
+- Elbows 178°/179° ⇒ errors 2°/1° ≤ 6.0 ⇒ arms = 10 ⇒ `hands = 10`.
+- `yaw_ratio = 0.05` ⇒ ≤ 0.144 ⇒ yaw = 10; `head_tilt = 4°` ≤ 6.0 ⇒ tilt = 10 ⇒ `head_front = 10`.
+- Grounded knee 179° (err 1° ≤ 4.4 ⇒ 10); grounded vertical 3° ≤ 6.0 ⇒ 10 ⇒ `grounded_leg = 10`.
+- Raised foot horizontal 3° ≤ 4.8 ⇒ `raised_foot = 10` (≥ 5.0 ⇒ no gate).
+- `frame_total = 0.25·(10+10+10+10) = 10.0`.
+
+### 7.2 A step failing the mandatory foot gate
+- Same as above except raised foot horizontal = **35°** (foot pointed, not flat).
+  35 ≥ fail 22.8 ⇒ `raised_foot = 0.0`.
+- `frame_total_pre_gate = 0.25·(10+10+10+0) = 7.5`.
+- `raised_foot (0.0) < pass_threshold (5.0)` ⇒ gate fires ⇒
+  `frame_total = min(7.5, 4.0) = 4.0`. The otherwise-strong step is capped at **4.0/10**.
