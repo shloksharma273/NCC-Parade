@@ -382,8 +382,8 @@ class DrillAnalyzer:
         keys = [
             ("Arms Straight", "hands", "180° (straight arms)", "Keep both arms straight throughout the march."),
             ("Look Front", "head_front", "face front, head upright", "Keep looking straight ahead with head upright."),
-            ("Grounded Leg", "grounded_leg", "perpendicular & straight", "Keep the grounded leg vertical and knee straight."),
-            ("Raised Foot", "raised_foot", "flat/parallel to ground", "Hold the raised foot flat and parallel to the ground."),
+            ("Grounded Leg", "grounded_leg", "perpendicular & straight", "Keep the grounded (rear, planted) leg vertical and knee straight."),
+            ("Front Foot", "raised_foot", "flat/parallel to ground", "Hold the front (driven-forward) foot flat and parallel to the ground; a raised hind heel is fine."),
         ]
 
         parameters = []

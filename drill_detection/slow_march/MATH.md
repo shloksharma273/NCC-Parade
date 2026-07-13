@@ -116,16 +116,27 @@ head_front = yaw_w · yaw_score + (1 − yaw_w) · tilt_score
 `0.5` in **front** view. v1 uses the pose-nose approximation; a hook to swap in Holistic
 face-landmark yaw is marked in `landmarks.py`.
 
-### 5.3 Grounded leg perpendicular & straight (`grounded_leg`) — two sub-checks
+**Front vs hind leg (side view).** The two leg-based parameters below score specific legs,
+so the front (driven-forward) and hind (rear, planted) legs must be identified correctly.
+This is done by **horizontal foot position**, NOT knee height: the marching direction is
+taken from the toes (`foot_index` sits ahead of `heel`), aggregated over the clip, and the
+**front leg is the one whose ankle is farther in that direction** (`assign_leg_roles_by_position`).
+A knee-lift heuristic mislabels the driven-forward leg when its knee sits low, which put the
+foot-parallel check on the wrong foot on ~6/8 real key frames. `grounded_leg` = hind (planted);
+`raised_leg` = front (driven).
+
+### 5.3 Grounded (HIND) leg perpendicular & straight (`grounded_leg`) — two sub-checks
 ```
 grounded_knee = score_by_tolerance(grounded_knee_angle, 180, perfect, fail)  # angle_at_joint(hip,knee,ankle)
 grounded_vert = score_by_tolerance(grounded_vertical,     0, perfect, fail)  # angle_to_vertical(ankle − hip)
 grounded_leg  = mean(grounded_knee, grounded_vert)
 ```
 
-### 5.4 Raised-leg foot parallel (`raised_foot`) — MANDATORY
+### 5.4 FRONT-leg foot parallel to ground (`raised_foot`) — MANDATORY
+Scored on the **front (driven-forward) leg only** — the front foot is held flat/parallel.
+The hind foot lifting at the heel is normal and is deliberately NOT scored for flatness.
 ```
-f              = foot_index − heel        (raised leg)
+f              = foot_index − heel        (FRONT leg)
 foot_horizontal = angle_to_horizontal(f)  = degrees(arcsin(|f_y|/|f|))   # 0° when flat
 raised_foot    = score_by_tolerance(foot_horizontal, 0, perfect, fail)
 ```

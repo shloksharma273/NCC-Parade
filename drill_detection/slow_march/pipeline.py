@@ -15,7 +15,7 @@ from mediapipe.tasks.python.vision import (
 
 from .config import PipelineConfig
 from .key_frame_detection import find_step_peaks
-from .landmarks import SlowMarchFrameMetrics, compute_frame_metrics
+from .landmarks import SlowMarchFrameMetrics, assign_leg_roles_by_position, compute_frame_metrics
 from .mediapipe_models import ensure_models
 from .report import generate_pdf_report
 from .scoring import FrameScore, score_frame
@@ -110,8 +110,8 @@ def _draw_annotations(frame: np.ndarray, metrics: SlowMarchFrameMetrics, frame_s
     gate = " [FOOT-GATE]" if frame_score.gated else ""
     label = (
         f"score {frame_score.total:.1f}/10{gate} | stride {metrics.stride_separation_norm:.2f} "
-        f"hind-spd {metrics.hind_foot_speed_norm:.3f} | raised {metrics.raised_leg} "
-        f"foot {metrics.raised_foot_horizontal_deg:.0f}"
+        f"hind-spd {metrics.hind_foot_speed_norm:.3f} | front {metrics.raised_leg} "
+        f"foot {metrics.raised_foot_horizontal_deg:.0f}deg"
     )
     cv2.putText(rendered, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
     return rendered
@@ -189,6 +189,12 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
     finally:
         cap.release()
         holistic.close()
+
+    # Identify FRONT (driven) vs HIND (planted) leg by horizontal foot position for side
+    # view; the front foot is scored for parallel-to-ground, the hind leg for straight +
+    # perpendicular. Front view keeps the knee-lift assignment from compute_frame_metrics.
+    if config.view == "side":
+        assign_leg_roles_by_position(metrics)
 
     # Key frames = slow-march step extremes: front leg farthest forward + hind leg planted
     # (see key_frame_detection.find_step_peaks; signal selected by config.key_frame_signal).

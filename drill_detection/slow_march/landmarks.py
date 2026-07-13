@@ -99,6 +99,33 @@ class SlowMarchFrameMetrics:
         return self.raised.foot_horizontal_deg
 
 
+def assign_leg_roles_by_position(metrics: list["SlowMarchFrameMetrics"]) -> None:
+    """Reassign raised(FRONT)/grounded(HIND) legs by horizontal foot position (side view).
+
+    A slow-march step is scored on the FRONT (driven-forward) leg for FOOT-PARALLEL-TO-
+    GROUND, and on the HIND (rear, planted) leg for STRAIGHT + PERPENDICULAR. The front
+    leg is the one whose ankle is farther in the marching direction; the hind foot lifting
+    at the heel is normal and must NOT be scored for flatness.
+
+    This replaces the knee-lift heuristic in compute_frame_metrics, which mislabels the
+    driven-forward leg when its knee sits low (empirically wrong on ~6/8 real key frames).
+    Mutates each metric's `raised_leg` (= front) and `grounded_leg` (= hind) in place.
+    """
+    if not metrics:
+        return
+    # Marching/facing direction from the toes: foot_index sits ahead of the heel in the
+    # direction of travel. Aggregate over the whole clip for a stable sign (+1 => +x).
+    disp = 0.0
+    for m in metrics:
+        disp += (m.left_foot_px[0] - m.left_heel_px[0]) + (m.right_foot_px[0] - m.right_heel_px[0])
+    forward = 1.0 if disp >= 0 else -1.0
+    for m in metrics:
+        # Front leg = ankle farther forward (larger x*forward); hind leg = the other.
+        front = "left" if (m.left_ankle_px[0] * forward) > (m.right_ankle_px[0] * forward) else "right"
+        m.raised_leg = front                                       # front/driven -> foot-parallel scored here
+        m.grounded_leg = "right" if front == "left" else "left"    # hind/planted -> straight + perpendicular
+
+
 def _to_pixel(landmark, width: int, height: int) -> tuple[float, float]:
     return float(landmark.x * width), float(landmark.y * height)
 
@@ -174,7 +201,9 @@ def compute_frame_metrics(
         head_yaw_ratio = (nose_px[0] - shoulder_mid_x) / shoulder_width  # ~0 facing front
     head_tilt = angle_to_vertical(np.array(nose_px) - np.array([shoulder_mid_x, shoulder_mid_y]))
 
-    # grounded = smaller knee-lift (planted, lower on screen); raised = the other
+    # Provisional grounded/raised by knee-lift; for side view this is overridden by
+    # assign_leg_roles_by_position() (horizontal foot position), which is the correct
+    # front/hind test — see that function.
     if left.knee_lift_px <= right.knee_lift_px:
         grounded_leg, raised_leg = "left", "right"
     else:
