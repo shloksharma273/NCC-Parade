@@ -10,12 +10,15 @@ from drill_detection.salute.pipeline import run_pipeline as run_salute_pipeline
 from drill_detection.kadam_tal.config import PipelineConfig as KadamTalConfig
 from drill_detection.kadam_tal.pipeline import run_pipeline as run_kadam_tal_pipeline
 
+from drill_detection.baju_swing.config import PipelineConfig as BajuSwingConfig
+from drill_detection.baju_swing.pipeline import run_pipeline as run_baju_swing_pipeline
+
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run drill analysis pipelines (salute or kadam tal).")
+    parser = argparse.ArgumentParser(description="Run drill analysis pipelines (salute, kadam tal or baju swing).")
     parser.add_argument(
         "--drill",
-        choices=["salute", "kadam_tal"],
+        choices=["salute", "kadam_tal", "baju_swing"],
         default="kadam_tal",
         help="Drill type to analyze (default: kadam_tal).",
     )
@@ -125,6 +128,32 @@ def main() -> None:
 
     if args.smooth_window <= 0 or args.min_peak_distance <= 0:
         raise ValueError("--smooth-window and --min-peak-distance must be >= 1")
+
+    if args.drill == "baju_swing":
+        config = BajuSwingConfig(
+            input_path=args.input,
+            output_dir=args.output_dir,
+            every_k_frames=args.every_k_frames,
+            min_detection_confidence=args.min_detection_confidence,
+            save_annotated_frames=not args.no_annotated,
+            save_raw_frames=args.save_raw_frames,
+            smooth_window=args.smooth_window,
+            min_peak_distance_frames=args.min_peak_distance,
+            difficulty=difficulty,
+        )
+        summaries = run_baju_swing_pipeline(config)
+        print(f"\nBaju swing analysis completed (difficulty={difficulty:.1f}/5).\n")
+        for summary in summaries:
+            print(f"Video: {summary['video']}")
+            print(f"  Swings (iterations): {summary['iteration_count']}")
+            print(f"  Total score: {summary['total_score']}")
+            print(f"  Average score/swing: {summary['average_score']}")
+            print(f"  JSON: {summary['results_json']}")
+            if summary.get("report_pdf"):
+                print(f"  PDF: {summary['report_pdf']}")
+            print()
+        return
+
     config = KadamTalConfig(
         input_path=args.input,
         output_dir=args.output_dir,

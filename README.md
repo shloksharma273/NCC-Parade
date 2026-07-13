@@ -8,6 +8,7 @@ Computer vision pipelines for NCC drill analysis, with a PC backend server and t
 |-------|---------|-------------|
 | **Kadam Tal** | `drill_detection/kadam_tal/` | Detects knee peak frames, scores posture, generates PDF report |
 | **Salute** | `drill_detection/salute/` | Finds salute candidate frames, scores posture (elbow, heels, hands) |
+| **Baju Swing** | `drill_detection/baju_swing/` | Detects arm-swing extremes (key frames), scores arms/swing/legs/fist/thumb, generates PDF report |
 
 ## Setup
 
@@ -30,10 +31,21 @@ python main.py --drill kadam_tal --input test_data/dataset/your_video.mp4
 python main.py --drill salute --input test_data/dataset/front_salute.mp4
 ```
 
+**Baju swing:**
+```bash
+python main.py --drill baju_swing --input test_data/dataset/your_video.mp4 --difficulty 2
+```
+
 **Kadam tal PDF report:**
 ```bash
 python generate_report.py --results output/<video>/results.json
 ```
+
+### Dev video test harness (TEMPORARY)
+
+With the backend running, open `http://<PC_IP>:8000/dev/test` to analyse any video
+in `test_data/dataset/` or `backend/media/raw/` without a camera (pick a drill,
+set difficulty, view score + parameters + annotated key frame + PDF).
 
 ## Backend Server
 

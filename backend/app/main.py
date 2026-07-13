@@ -10,6 +10,9 @@ from fastapi.staticfiles import StaticFiles
 
 from .api.camera_routes import router as camera_router
 from .api.decision_routes import router as decision_router
+# TEMPORARY (dev-only): video test harness, see api/dev_test_routes.py
+from .api.dev_test_routes import mount_output_static as mount_dev_test_output
+from .api.dev_test_routes import router as dev_test_router
 from .api.pairing_routes import router as pairing_router
 from .api.readiness_routes import router as readiness_router
 from .api.recording_routes import router as recording_router
@@ -59,6 +62,11 @@ app.include_router(recording_router)
 app.include_router(report_router)
 app.include_router(decision_router)
 app.include_router(websocket_router)
+
+# TEMPORARY (dev-only): drill video test harness at /dev/test. Serves annotated
+# frames and PDFs from ml_output. Safe to remove without affecting production.
+app.include_router(dev_test_router)
+mount_dev_test_output(app)
 
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 

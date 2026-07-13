@@ -50,6 +50,8 @@ class DrillAnalyzer:
             return self._analyze_salute(video_path, session_id, progress_callback)
         if drill_type == "kadam_tal":
             return self._analyze_kadam_tal(video_path, session_id, progress_callback)
+        if drill_type == "baju_swing":
+            return self._analyze_baju_swing(video_path, session_id, progress_callback)
         raise ValueError(f"Drill type '{drill_type}' is not implemented yet.")
 
     def _session_metadata(self, session_id: str) -> ReportMetadata:
@@ -57,6 +59,84 @@ class DrillAnalyzer:
 
         session = session_service.get_session(session_id)
         return ReportMetadata.from_session(session)
+
+    def _session_metadata_or_default(self, session_id: str, drill_type: str) -> ReportMetadata:
+        """Defensive metadata lookup used by the baju_swing dev test harness so
+        analysis can run without a real DB session (no camera required)."""
+        try:
+            from ..services.session_service import session_service
+
+            session = session_service.get_session(session_id)
+            if session:
+                return ReportMetadata.from_session(session)
+        except Exception:
+            pass
+        return ReportMetadata(
+            session_id=session_id,
+            drill_type=drill_type,
+            cadet_name="Test Cadet",
+        )
+
+    def _analyze_baju_swing(
+        self,
+        video_path: str,
+        session_id: str,
+        progress_callback: ProgressCallback | None,
+    ) -> dict:
+        from drill_detection.baju_swing.config import PipelineConfig as BajuSwingConfig
+        from drill_detection.baju_swing.pipeline import process_video as process_baju_swing_video
+
+        def emit(stage: ProcessingStage, progress: int, message: str) -> None:
+            if progress_callback:
+                progress_callback(stage, progress, message)
+
+        emit(ProcessingStage.VIDEO_SAVED, 10, "Video saved successfully.")
+        emit(ProcessingStage.POSE_EXTRACTION, 25, "Extracting pose and hand landmarks.")
+
+        output_dir = settings.ml_output_dir / session_id
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        config = BajuSwingConfig(
+            input_path=Path(video_path),
+            output_dir=output_dir,
+            difficulty=settings.ml_difficulty,
+            save_annotated_frames=True,
+            report_metadata=self._session_metadata_or_default(session_id, "baju_swing"),
+        )
+
+        emit(ProcessingStage.POSE_EXTRACTION, 40, "Detecting arm-swing extremes (key frames).")
+        summary = process_baju_swing_video(Path(video_path), config)
+
+        emit(ProcessingStage.PARAMETER_CALCULATION, 65, "Scoring arm, swing, leg, fist and thumb parameters.")
+        emit(ProcessingStage.GROUND_TRUTH_COMPARISON, 80, "Comparing each swing against ideal drill form.")
+        emit(ProcessingStage.REPORT_GENERATION, 95, "Generating baju swing report.")
+
+        results_path = Path(summary["results_json"])
+        with results_path.open(encoding="utf-8") as f:
+            ml_results = json.load(f)
+
+        key_frames = ml_results.get("key_frames", [])
+        ml_summary = ml_results.get("summary", {})
+        avg_score = ml_summary.get("average_score_per_swing", 0.0)
+        iteration_count = ml_summary.get("iteration_count", 0)
+        key_frame_path = self._resolve_baju_swing_key_frame(output_dir, key_frames)
+
+        emit(ProcessingStage.COMPLETED, 100, "Analysis completed.")
+
+        return {
+            "score": int(round(avg_score * 10)),
+            "average_score_per_swing": avg_score,
+            "iteration_count": iteration_count,
+            "result": self._result_label(avg_score * 10),
+            "summary": self._build_baju_swing_summary(key_frames, avg_score, iteration_count),
+            "parameters": self._build_baju_swing_parameters(key_frames),
+            "annotated_video_path": None,
+            "key_frame_path": key_frame_path,
+            "ml_results_path": str(results_path),
+            "report_pdf_path": summary.get("report_pdf"),
+            "key_frames": key_frames,
+            "ml_summary": ml_summary,
+        }
 
     def _analyze_kadam_tal(
         self,
@@ -226,6 +306,56 @@ class DrillAnalyzer:
             return None
         rel = peak_frames[0].get("output_image_path", "")
         return DrillAnalyzer._resolve_output_image(output_dir, rel)
+
+    @staticmethod
+    def _resolve_baju_swing_key_frame(output_dir: Path, key_frames: list[dict]) -> str | None:
+        if not key_frames:
+            return None
+        best = max(key_frames, key=lambda f: f["score"]["total"])
+        return DrillAnalyzer._resolve_output_image(output_dir, best.get("output_image_path", ""))
+
+    @staticmethod
+    def _build_baju_swing_summary(key_frames: list[dict], avg_score: float, iteration_count: int) -> list[str]:
+        if iteration_count == 0:
+            return ["No arm swings were detected in the recording."]
+
+        summaries = [f"Detected {iteration_count} arm swings with average score {avg_score:.2f}/10."]
+        if key_frames:
+            best = max(key_frames, key=lambda f: f["score"]["total"])
+            worst = min(key_frames, key=lambda f: f["score"]["total"])
+            summaries.append(f"Best swing: #{best['rank']} scored {best['score']['total']:.2f}/10.")
+            summaries.append(f"Weakest swing: #{worst['rank']} scored {worst['score']['total']:.2f}/10.")
+        return summaries
+
+    @staticmethod
+    def _build_baju_swing_parameters(key_frames: list[dict]) -> list[dict]:
+        if not key_frames:
+            return []
+
+        keys = [
+            ("Arms Straight", "arms_straight", "180° (straight elbows)", "Keep both arms straight through the swing."),
+            ("Swing Spread", "swing_spread", "180° (full front-back swing)", "Swing the arms further front and back."),
+            ("Legs Straight", "legs_straight", "180° (attention)", "Keep both legs straight and stand to attention."),
+            ("Fist Closed", "fist", "closed fist", "Curl all four fingers into a tight fist."),
+            ("Thumb On Top", "thumb", "thumb folded on top", "Fold the thumb across the front of the fingers."),
+        ]
+
+        parameters = []
+        for name, key, expected, feedback in keys:
+            values = [frame["score"][key] for frame in key_frames]
+            avg = sum(values) / len(values)
+            status = "pass" if avg >= 7 else "needs_correction" if avg >= 5 else "fail"
+            parameters.append(
+                {
+                    "name": name,
+                    "expected": expected,
+                    "actual": f"{avg:.2f}/10 average",
+                    "score": round(avg / 10, 2),
+                    "status": status,
+                    "feedback": feedback if avg < 7 else "Good form on this parameter.",
+                }
+            )
+        return parameters
 
     @staticmethod
     def _result_label(score_0_100: float) -> str:
