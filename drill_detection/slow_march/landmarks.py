@@ -71,6 +71,12 @@ class SlowMarchFrameMetrics:
     right_wrist_px: tuple[float, float]
     nose_px: tuple[float, float]
 
+    # Key-frame diagnostics, filled in by key_frame_detection for selected frames only.
+    # stride_separation_norm: horizontal ankle separation / body scale (front leg farthest).
+    # hind_foot_speed_norm: grounded-ankle per-frame horizontal speed / body scale (0 == planted).
+    stride_separation_norm: float = 0.0
+    hind_foot_speed_norm: float = 0.0
+
     # convenience accessors resolving grounded/raised leg to concrete angle values
     @property
     def grounded(self) -> LegAngles:

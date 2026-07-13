@@ -63,6 +63,8 @@ def _key_frame_to_json(
         "frame_index": item.frame_index,
         "timestamp_ms": round(item.timestamp_ms, 2),
         "inter_leg_angle_deg": round(item.inter_leg_angle_deg, 2),
+        "stride_separation_norm": item.stride_separation_norm,  # front leg farthest (higher == wider stride)
+        "hind_foot_speed_norm": item.hind_foot_speed_norm,      # hind leg static (0 == planted)
         "grounded_leg": item.grounded_leg,
         "raised_leg": item.raised_leg,
         "grounded_knee_angle_deg": round(item.grounded_knee_angle_deg, 2),
@@ -107,8 +109,9 @@ def _draw_annotations(frame: np.ndarray, metrics: SlowMarchFrameMetrics, frame_s
 
     gate = " [FOOT-GATE]" if frame_score.gated else ""
     label = (
-        f"score {frame_score.total:.1f}/10{gate} | interleg {metrics.inter_leg_angle_deg:.0f} | "
-        f"raised {metrics.raised_leg} foot {metrics.raised_foot_horizontal_deg:.0f}"
+        f"score {frame_score.total:.1f}/10{gate} | stride {metrics.stride_separation_norm:.2f} "
+        f"hind-spd {metrics.hind_foot_speed_norm:.3f} | raised {metrics.raised_leg} "
+        f"foot {metrics.raised_foot_horizontal_deg:.0f}"
     )
     cv2.putText(rendered, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
     return rendered
@@ -187,14 +190,9 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         cap.release()
         holistic.close()
 
-    # Key frames = local maxima of the inter-leg-angle signal (step extremes).
-    key_frames_metrics = find_step_peaks(
-        metrics,
-        smooth_window=config.smooth_window,
-        min_distance=config.min_peak_distance_frames,
-        min_prominence_deg=config.min_peak_prominence_deg,
-        min_prominence_ratio=config.min_peak_prominence_ratio,
-    )
+    # Key frames = slow-march step extremes: front leg farthest forward + hind leg planted
+    # (see key_frame_detection.find_step_peaks; signal selected by config.key_frame_signal).
+    key_frames_metrics = find_step_peaks(metrics, config)
 
     key_frames: list[dict] = []
     frame_scores: list[float] = []

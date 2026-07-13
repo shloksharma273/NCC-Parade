@@ -15,33 +15,61 @@ correct slow march shows:
 3. **Grounded leg perpendicular & straight** — support leg vertical to the ground and knee ≈ 180°.
 4. **Raised-leg foot parallel to the ground (MANDATORY)** — the airborne foot held flat.
 
-## 2. Key-frame definition & the inter-leg-angle signal
+## 2. Key-frame definition & detection
 
-There is no single key pose. **Every step extreme is a key frame**: a frame where the angle
-between the two legs is at a local maximum (leg split widest as the raised leg reaches the
-front of the step). This mirrors kadam_tal's knee-lift peak detection, but the driving signal
-is the **inter-leg angle**.
+There is no single key pose. **Every step extreme is a key frame.** A correct slow-march key
+frame is the instant where **the front leg is farthest forward AND the hind (grounded) leg is
+planted/static** — the classic "leg driven out to the front, held over a firmly planted rear
+foot." Simply taking the widest leg split is not enough: the widest-split moment can occur
+mid-transition while the rear foot is still sliding. We therefore detect on two conditions
+together. The signal used is selected by `key_frame_signal` (`"auto"` ⇒ `"stride"` for
+`view="side"`, `"inter_leg_angle"` for `view="front"`).
 
-For thigh vectors (pixels):
+### 2.1 Stride detector (side view — default)
+
+**Front leg farthest** → normalised horizontal distance between the two ankles:
 
 ```
-v_L = knee_L − hip_L
-v_R = knee_R − hip_R
+body_scale   = mean( |ankle_L − hip_L|, |ankle_R − hip_R| ), clamped ≥ 1   # camera-distance invariant
+stride[i]    = |ankle_L.x − ankle_R.x| / body_scale                        # larger ⇒ legs split wider
+```
+
+**Hind leg static** → per-frame horizontal speed of the *grounded* ankle (the grounded leg is
+the one with the smaller knee-lift, i.e. the planted rear leg):
+
+```
+hind_speed[i] = |grounded_ankle.x[i] − grounded_ankle.x[i−1]| / body_scale   # 0 ⇒ foot planted
+```
+
+Detection steps:
+
+1. Smooth `stride` (box filter, `smooth_window`), and lightly smooth `hind_speed`.
+2. Find local maxima of `stride` (reusing the verbatim `kadam_tal` prominence / `min_distance`
+   machinery; prominence floor = `signal_range · stride_min_prominence_ratio`, unit-agnostic).
+3. **Snap** each raw peak to the nearby frame (within `±hind_static_snap_window`, keeping
+   `stride ≥ (1 − hind_static_snap_separation_tol)·peak`) that **minimises `hind_speed`** — i.e.
+   the moment the rear foot is most planted while the front leg is still (near) farthest.
+4. **Front-far-forward gate:** keep only snapped frames with
+   `stride ≥ min_stride_ratio_of_max · max(stride)` (default 0.55) — rejects small bumps that
+   are not real step extremes.
+5. **Hind-static gate:** keep only frames with `hind_speed ≤ hind_static_max_speed_ratio`
+   (default 0.045) — rejects mid-transition frames where the rear foot is still moving. (If this
+   gate would reject *every* step on an otherwise-valid clip, it is relaxed so detection never
+   silently returns zero.)
+6. De-duplicate within `min_peak_distance_frames`, keeping the wider-stride frame.
+
+Each key frame records `stride_separation_norm` and `hind_foot_speed_norm` in `results.json`
+for transparency (empirically ~0.7–1.0 and ~0.00–0.02 respectively on real footage).
+
+### 2.2 Inter-leg-angle detector (front-view fallback)
+
+When `view="front"` the stride opens toward the camera and horizontal ankle separation is
+degenerate, so we fall back to the thigh-vector angle (its local maxima, same peak machinery):
+
+```
+v_L = knee_L − hip_L ;  v_R = knee_R − hip_R
 inter_leg_angle = angle_between(v_L, v_R) = degrees( arccos( (v_L · v_R) / (|v_L| |v_R|) ) )
 ```
-
-Thighs are near-parallel at stance (small angle); the split widens and **peaks** at the step
-extreme.
-
-### Peak detection (copied verbatim from `kadam_tal.peak_detection`, renamed `find_step_peaks`)
-
-1. Build the per-frame `inter_leg_angle` array (NaNs → 0 so missing landmarks never win).
-2. Smooth with a moving-average box filter of width `smooth_window` (default 5).
-3. Prominence floor = `min_peak_prominence_deg` if set, else
-   `max(3.0, signal_range * min_peak_prominence_ratio)` (ratio default 0.15).
-4. A local maximum `i` qualifies if `value[i]` exceeds both neighbours and its prominence
-   (`value[i] − max(left_min, right_min)` over `±min_distance` frames) ≥ the floor, with a
-   minimum spacing of `min_peak_distance_frames` (default 15) between accepted peaks.
 
 **`iteration_count` = number of accepted key frames.** Only valid key frames count. This is a
 first-class output in `results.json` (`summary.iteration_count`), the analyzer response, and
