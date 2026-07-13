@@ -11,12 +11,12 @@ Army/NCC-inspired tablet control panel for the PC backend: QR pairing, readiness
 ## Setup
 
 ```bash
-cd tablet-webapp
+cd frontend
 npm install
 npm run build
 ```
 
-The backend serves the production build from `tablet-webapp/dist` at `http://<PC_IP>:8000/app`.
+The backend serves the production build from `frontend/dist` at `http://<PC_IP>:8000/app`.
 
 ## Development
 

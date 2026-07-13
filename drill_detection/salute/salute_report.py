@@ -8,8 +8,8 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from drill_report_metadata import ReportMetadata
-from knee_peak_detector.report import _header_story, _scaled_image
+from drill_detection.report_metadata import ReportMetadata
+from drill_detection.kadam_tal.report import _header_story, _scaled_image
 
 
 def generate_salute_pdf_report(

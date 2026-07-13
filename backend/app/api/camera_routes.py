@@ -5,8 +5,8 @@ from fastapi.responses import StreamingResponse
 
 from ..config import settings
 from ..models.api_models import ActionResponse
-from ..services.camera_service import camera_service
-from ..services.preview_service import preview_service
+from ..video_pipeline.camera_service import camera_service
+from ..video_pipeline.preview_service import preview_service
 from ..services.session_service import session_service
 
 router = APIRouter(tags=["camera"])

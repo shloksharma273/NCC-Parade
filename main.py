@@ -3,12 +3,12 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from salute_detector.config import PipelineConfig as SaluteConfig
-from salute_detector.difficulty import load_difficulty
-from salute_detector.pipeline import run_pipeline as run_salute_pipeline
+from drill_detection.salute.config import PipelineConfig as SaluteConfig
+from drill_detection.salute.difficulty import load_difficulty
+from drill_detection.salute.pipeline import run_pipeline as run_salute_pipeline
 
-from knee_peak_detector.config import PipelineConfig as KadamTalConfig
-from knee_peak_detector.pipeline import run_pipeline as run_kadam_tal_pipeline
+from drill_detection.kadam_tal.config import PipelineConfig as KadamTalConfig
+from drill_detection.kadam_tal.pipeline import run_pipeline as run_kadam_tal_pipeline
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,7 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--input",
         type=Path,
-        default=Path("data"),
+        default=Path("test_data/dataset"),
         help="Input video file or directory (default: data).",
     )
     parser.add_argument(

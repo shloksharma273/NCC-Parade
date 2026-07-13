@@ -6,8 +6,8 @@ Computer vision pipelines for NCC drill analysis, with a PC backend server and t
 
 | Drill | Package | Description |
 |-------|---------|-------------|
-| **Kadam Tal** | `knee_peak_detector/` | Detects knee peak frames, scores posture, generates PDF report |
-| **Salute** | `salute_detector/` | Finds salute candidate frames, scores posture (elbow, heels, hands) |
+| **Kadam Tal** | `drill_detection/kadam_tal/` | Detects knee peak frames, scores posture, generates PDF report |
+| **Salute** | `drill_detection/salute/` | Finds salute candidate frames, scores posture (elbow, heels, hands) |
 
 ## Setup
 
@@ -22,12 +22,12 @@ cp .env.example .env   # optional: tune DIFFICULTY
 
 **Kadam tal:**
 ```bash
-python main.py --drill kadam_tal --input data/your_video.mp4
+python main.py --drill kadam_tal --input test_data/dataset/your_video.mp4
 ```
 
 **Salute:**
 ```bash
-python main.py --drill salute --input data/front_salute.mp4
+python main.py --drill salute --input test_data/dataset/front_salute.mp4
 ```
 
 **Kadam tal PDF report:**
@@ -57,10 +57,10 @@ Create a session with `"drill_type": "salute"` or `"drill_type": "kadam_tal"`.
 
 See [backend/README.md](backend/README.md).
 
-## Tablet Webapp
+## Tablet Webapp (Frontend)
 
 ```bash
-cd tablet-webapp
+cd frontend
 npm install
 npm run build   # required for /app on backend
 ```
@@ -69,14 +69,27 @@ Production URL (after backend is running): `http://<PC_IP>:8000/app`
 
 Dev mode: `npm run dev` → `http://<PC_IP>:5173/app/`
 
-See [tablet-webapp/README.md](tablet-webapp/README.md).
+See [frontend/README.md](frontend/README.md).
 
 ## Project Structure
 
+The codebase is organized into five sections:
+
 ```
-salute_detector/      # Salute detection + posture scoring
-knee_peak_detector/   # Kadam tal peak detection + scoring + PDF
-backend/              # FastAPI server (recording, ML, reports)
-tablet-webapp/        # React tablet control UI
-main.py               # Unified CLI for both drills
+frontend/                    # 1. UI/UX — React tablet control app
+backend/                     # 2. Backend — FastAPI server (sessions, ML, reports, DB)
+│  └─ app/video_pipeline/    # 5. Video streaming & capture — camera / recording / preview
+drill_detection/             # 3. Drill detection
+│  ├─ salute/                #      a) salute detector + posture scoring
+│  ├─ kadam_tal/             #      b) kadam tal peak detection + scoring + PDF
+│  ├─ report_metadata.py     #      shared report metadata
+│  └─ models/                #      MediaPipe holistic_landmarker.task
+test_data/                   # 4. Test data
+│  └─ dataset/               #      a) testing data set (sample drill videos)
+│                            #      b) testing data reports → generated under backend/
+main.py                      # Unified CLI for both drills
+generate_report.py           # Kadam tal PDF report from results.json
 ```
+
+> Generated reports, media, and the SQLite DB live under `backend/` (see
+> [test_data/README.md](test_data/README.md)) so the running server can serve and index them.

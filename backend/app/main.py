@@ -23,7 +23,7 @@ from .db.database import init_db
 from .ml.drill_analyzer import drill_analyzer
 from .startup_banner import print_startup_banner
 
-WEBAPP_DIR = PROJECT_ROOT / "tablet-webapp" / "dist"
+WEBAPP_DIR = PROJECT_ROOT / "frontend" / "dist"
 
 
 @asynccontextmanager

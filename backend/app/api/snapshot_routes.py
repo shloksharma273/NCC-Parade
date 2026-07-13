@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import Response
 
 from ..models.api_models import CameraDiagnosticsResponse
-from ..services.camera_service import camera_service
+from ..video_pipeline.camera_service import camera_service
 
 router = APIRouter(tags=["camera"])
 

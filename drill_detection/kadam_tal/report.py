@@ -9,7 +9,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from drill_report_metadata import ReportMetadata, drill_type_label
+from drill_detection.report_metadata import ReportMetadata, drill_type_label
 
 IMAGE_COL_WIDTH = 2.0 * inch
 SCORE_COL_WIDTH = 1.6 * inch

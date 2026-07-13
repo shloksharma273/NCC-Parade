@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from drill_report_metadata import ReportMetadata
+from drill_detection.report_metadata import ReportMetadata
 
 from ..config import PROJECT_ROOT, SUPPORTED_DRILL_TYPES, settings
 from ..models.session_models import ProcessingStage
@@ -22,7 +22,7 @@ class DrillAnalyzer:
 
     def ensure_model_ready(self) -> bool:
         try:
-            from salute_detector.mediapipe_models import ensure_models
+            from drill_detection.salute.mediapipe_models import ensure_models
 
             ensure_models()
             self._model_checked = True
@@ -64,8 +64,8 @@ class DrillAnalyzer:
         session_id: str,
         progress_callback: ProgressCallback | None,
     ) -> dict:
-        from knee_peak_detector.config import PipelineConfig
-        from knee_peak_detector.pipeline import process_video
+        from drill_detection.kadam_tal.config import PipelineConfig
+        from drill_detection.kadam_tal.pipeline import process_video
 
         def emit(stage: ProcessingStage, progress: int, message: str) -> None:
             if progress_callback:
@@ -124,8 +124,8 @@ class DrillAnalyzer:
         session_id: str,
         progress_callback: ProgressCallback | None,
     ) -> dict:
-        from salute_detector.config import PipelineConfig as SaluteConfig
-        from salute_detector.pipeline import process_video as process_salute_video
+        from drill_detection.salute.config import PipelineConfig as SaluteConfig
+        from drill_detection.salute.pipeline import process_video as process_salute_video
 
         def emit(stage: ProcessingStage, progress: int, message: str) -> None:
             if progress_callback:
@@ -180,7 +180,7 @@ class DrillAnalyzer:
         report_pdf_path = None
         metadata = self._session_metadata(session_id)
         if posture_analyses:
-            from salute_detector.salute_report import generate_salute_pdf_report
+            from drill_detection.salute.salute_report import generate_salute_pdf_report
 
             pdf_path = output_dir / Path(video_path).stem / "salute_report.pdf"
             generate_salute_pdf_report(
