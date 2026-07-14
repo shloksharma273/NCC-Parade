@@ -29,14 +29,17 @@ export const STAGE_LABELS: Record<string, string> = {
   failed: "Failed",
 };
 
+// viewSelectable: the cadet can choose Front/Side at session creation (drill supports both
+// modes in the backend). baju_swing implements both (front = fist/thumb + arm spread,
+// side = inter-arm swing angle); others use a fixed view.
 export const DRILL_OPTIONS = [
-  { value: "salute", label: "Salute", cameraView: "Front", backendSupported: true },
-  { value: "kadam_tal", label: "Kadam Tal", cameraView: "Side", backendSupported: true },
-  { value: "baju_swing", label: "Baju Swing", cameraView: "Front", backendSupported: true },
-  { value: "slow_march", label: "Slow March", cameraView: "Side", backendSupported: true },
-  { value: "slow_march_track", label: "Slow March Track", cameraView: "Side", backendSupported: false },
-  { value: "tez_march", label: "Tez March", cameraView: "Side", backendSupported: false },
-  { value: "hill_march", label: "Hill March", cameraView: "Side", backendSupported: false },
+  { value: "salute", label: "Salute", cameraView: "Front", backendSupported: true, viewSelectable: false },
+  { value: "kadam_tal", label: "Kadam Tal", cameraView: "Side", backendSupported: true, viewSelectable: false },
+  { value: "baju_swing", label: "Baju Swing", cameraView: "Front", backendSupported: true, viewSelectable: true },
+  { value: "slow_march", label: "Slow March", cameraView: "Side", backendSupported: true, viewSelectable: false },
+  { value: "slow_march_track", label: "Slow March Track", cameraView: "Side", backendSupported: false, viewSelectable: false },
+  { value: "tez_march", label: "Tez March", cameraView: "Side", backendSupported: false, viewSelectable: false },
+  { value: "hill_march", label: "Hill March", cameraView: "Side", backendSupported: false, viewSelectable: false },
 ] as const;
 
 export const SUPPORTED_DRILL_TYPES = DRILL_OPTIONS.filter((d) => d.backendSupported);

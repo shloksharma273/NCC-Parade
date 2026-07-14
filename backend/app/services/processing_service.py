@@ -35,12 +35,17 @@ class ProcessingService:
         try:
             from ..ml.drill_analyzer import drill_analyzer
 
+            # camera_view chosen at session creation (e.g. baju_swing front/side) drives the
+            # analyzer's view mode; normalise case and default to "side". Drills that ignore
+            # view (salute/kadam_tal) are unaffected.
+            view = (session.get("camera_view") or "side").strip().lower()
             analysis = await asyncio.to_thread(
                 drill_analyzer.analyze,
                 video_path,
                 session["drill_type"],
                 session_id,
                 progress_callback,
+                view,
             )
             report = report_service.build_report(session, analysis, session_id)
             report_path = report_service.save_report(session_id, report)

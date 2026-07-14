@@ -19,8 +19,13 @@ export function NewSessionPage() {
   const [unit, setUnit] = useState("");
   const [drillType, setDrillType] = useState(retakeContext?.drill_type ?? "kadam_tal");
   const [cameraId, setCameraId] = useState(retakeContext?.camera_id ?? "0");
+  const [cameraView, setCameraView] = useState<string>(
+    DRILL_OPTIONS.find((d) => d.value === (retakeContext?.drill_type ?? "kadam_tal"))?.cameraView ?? "Side",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedDrill = DRILL_OPTIONS.find((d) => d.value === drillType);
 
   useEffect(() => {
     if (retakeContext) setRetakeContext(null);
@@ -32,9 +37,8 @@ export function NewSessionPage() {
       setError("Cadet name is required.");
       return;
     }
-    const selected = DRILL_OPTIONS.find((d) => d.value === drillType);
-    if (selected && !selected.backendSupported) {
-      setError(`${selected.label} is not available yet.`);
+    if (selectedDrill && !selectedDrill.backendSupported) {
+      setError(`${selectedDrill.label} is not available yet.`);
       return;
     }
 
@@ -48,7 +52,7 @@ export function NewSessionPage() {
         unit: unit.trim() || undefined,
         drill_type: drillType,
         camera_id: cameraId,
-        camera_view: selected?.cameraView,
+        camera_view: cameraView,
       });
       const session = await getSession(created.session_id);
       setCurrentSession({
@@ -102,7 +106,12 @@ export function NewSessionPage() {
                   key={drill.value}
                   type="button"
                   disabled={!drill.backendSupported}
-                  onClick={() => drill.backendSupported && setDrillType(drill.value)}
+                  onClick={() => {
+                    if (drill.backendSupported) {
+                      setDrillType(drill.value);
+                      setCameraView(drill.cameraView);
+                    }
+                  }}
                   className={`relative p-4 text-left transition-all ${
                     !drill.backendSupported
                       ? "cursor-not-allowed rounded-xl border-2 border-slate-200 bg-slate-100 opacity-60"
@@ -128,6 +137,41 @@ export function NewSessionPage() {
             })}
           </div>
         </div>
+
+        {selectedDrill?.viewSelectable && (
+          <div>
+            <p className="mb-3 font-command text-xl font-bold">Camera View</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(["Front", "Side"] as const).map((view) => {
+                const active = cameraView === view;
+                return (
+                  <button
+                    key={view}
+                    type="button"
+                    onClick={() => setCameraView(view)}
+                    className={`relative p-4 text-left transition-all ${
+                      active
+                        ? "rounded-xl border-4 border-[var(--color-army-green)] bg-[var(--color-sand)] shadow-md ring-2 ring-[var(--color-army-green)] ring-offset-2"
+                        : "command-card hover:border-[var(--color-army-green)] hover:bg-[var(--color-sand)]"
+                    }`}
+                  >
+                    {active && (
+                      <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-army-green)] text-sm font-bold text-white">
+                        ✓
+                      </span>
+                    )}
+                    <p className="font-command text-lg font-bold">{view} View</p>
+                    <p className="text-sm text-slate-600">
+                      {view === "Front"
+                        ? "Face-on: fist / thumb closure + arm spread"
+                        : "Side-on: inter-arm swing angle"}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <label className="block">
           <span className="mb-2 block font-semibold">Camera ID</span>
