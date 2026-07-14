@@ -26,6 +26,26 @@ def score_by_tolerance(
     return 10.0 * (1.0 - (error - perfect_tolerance) / (fail_tolerance - perfect_tolerance))
 
 
+def score_by_range(
+    value: float,
+    low: float,
+    high: float,
+    fail_tolerance: float,
+) -> float:
+    """Full score inside [low, high]; linear falloff to 0 over fail_tolerance degrees on each side."""
+    if math.isnan(value):
+        return 0.0
+
+    if low <= value <= high:
+        return 10.0
+
+    error = (low - value) if value < low else (value - high)
+    if error >= fail_tolerance:
+        return 0.0
+
+    return 10.0 * (1.0 - error / fail_tolerance)
+
+
 @dataclass
 class FrameScore:
     total: float
@@ -52,12 +72,13 @@ def score_peak_frame(
     right_elbow_angle_deg: float,
     difficulty: float,
 ) -> FrameScore:
-    knee_perfect, knee_fail = scaled_tolerances(difficulty, 5.0, 2.0, 40.0, 15.0)
+    _, knee_fail = scaled_tolerances(difficulty, 5.0, 2.0, 40.0, 15.0)
     foot_perfect, foot_fail = scaled_tolerances(difficulty, 5.0, 2.0, 40.0, 15.0)
     leg_perfect, leg_fail = scaled_tolerances(difficulty, 5.0, 2.0, 35.0, 12.0)
     arm_perfect, arm_fail = scaled_tolerances(difficulty, 6.0, 2.5, 45.0, 18.0)
 
-    peak_knee = score_by_tolerance(peak_knee_angle_deg, 90.0, knee_perfect, knee_fail)
+    # Raised leg knee: full score in the 80-90 degree plateau, linear falloff before/after.
+    peak_knee = score_by_range(peak_knee_angle_deg, 80.0, 90.0, knee_fail)
     peak_foot = score_by_tolerance(peak_foot_angle_deg, 90.0, foot_perfect, foot_fail)
     grounded = score_by_tolerance(grounded_knee_angle_deg, 180.0, leg_perfect, leg_fail)
 

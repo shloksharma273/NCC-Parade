@@ -1,0 +1,261 @@
+{
+  "video_name": "kadamTal.mp4",
+  "difficulty": 2.0,
+  "report_metadata": null,
+  "summary": {
+    "kadam_tal_count": 8,
+    "total_score": 54.69,
+    "max_possible_score": 80,
+    "average_score_per_kadam_tal": 6.84
+  },
+  "peak_frames": [
+    {
+      "rank": 1,
+      "video_name": "kadamTal.mp4",
+      "frame_index": 20,
+      "timestamp_ms": 365.97,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 57.8,
+      "knee_angle_deg": 76.01,
+      "foot_angle_deg": 103.82,
+      "grounded_knee_angle_deg": 178.19,
+      "left_elbow_angle_deg": 161.58,
+      "right_elbow_angle_deg": 169.96,
+      "left": {
+        "knee_angle_deg": 76.01,
+        "foot_angle_deg": 103.82,
+        "knee_lift_px": 57.8
+      },
+      "right": {
+        "knee_angle_deg": 178.19,
+        "foot_angle_deg": 107.76,
+        "knee_lift_px": -126.72
+      },
+      "score": {
+        "total": 7.9,
+        "peak_knee_angle": 8.67,
+        "peak_foot_angle": 6.17,
+        "grounded_leg": 10.0,
+        "hands": 6.75
+      },
+      "output_image_path": "kadamTal/peak_frames/peak_01_frame_000020_left.jpg"
+    },
+    {
+      "rank": 2,
+      "video_name": "kadamTal.mp4",
+      "frame_index": 65,
+      "timestamp_ms": 1189.4,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 25.95,
+      "knee_angle_deg": 97.3,
+      "foot_angle_deg": 119.93,
+      "grounded_knee_angle_deg": 179.81,
+      "left_elbow_angle_deg": 162.51,
+      "right_elbow_angle_deg": 166.26,
+      "left": {
+        "knee_angle_deg": 179.81,
+        "foot_angle_deg": 109.67,
+        "knee_lift_px": -120.06
+      },
+      "right": {
+        "knee_angle_deg": 97.3,
+        "foot_angle_deg": 119.93,
+        "knee_lift_px": 25.95
+      },
+      "score": {
+        "total": 5.97,
+        "peak_knee_angle": 7.57,
+        "peak_foot_angle": 0.03,
+        "grounded_leg": 10.0,
+        "hands": 6.28
+      },
+      "output_image_path": "kadamTal/peak_frames/peak_02_frame_000065_right.jpg"
+    },
+    {
+      "rank": 3,
+      "video_name": "kadamTal.mp4",
+      "frame_index": 110,
+      "timestamp_ms": 2012.83,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 53.36,
+      "knee_angle_deg": 88.11,
+      "foot_angle_deg": 100.92,
+      "grounded_knee_angle_deg": 175.28,
+      "left_elbow_angle_deg": 154.01,
+      "right_elbow_angle_deg": 174.64,
+      "left": {
+        "knee_angle_deg": 88.11,
+        "foot_angle_deg": 100.92,
+        "knee_lift_px": 53.36
+      },
+      "right": {
+        "knee_angle_deg": 175.28,
+        "foot_angle_deg": 108.69,
+        "knee_lift_px": -120.52
+      },
+      "score": {
+        "total": 8.28,
+        "peak_knee_angle": 10.0,
+        "peak_foot_angle": 7.28,
+        "grounded_leg": 9.58,
+        "hands": 6.26
+      },
+      "output_image_path": "kadamTal/peak_frames/peak_03_frame_000110_left.jpg"
+    },
+    {
+      "rank": 4,
+      "video_name": "kadamTal.mp4",
+      "frame_index": 157,
+      "timestamp_ms": 2872.85,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 30.75,
+      "knee_angle_deg": 97.21,
+      "foot_angle_deg": 128.17,
+      "grounded_knee_angle_deg": 178.02,
+      "left_elbow_angle_deg": 153.45,
+      "right_elbow_angle_deg": 166.12,
+      "left": {
+        "knee_angle_deg": 178.02,
+        "foot_angle_deg": 115.35,
+        "knee_lift_px": -115.35
+      },
+      "right": {
+        "knee_angle_deg": 97.21,
+        "foot_angle_deg": 128.17,
+        "knee_lift_px": 30.75
+      },
+      "score": {
+        "total": 5.58,
+        "peak_knee_angle": 7.6,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 4.72
+      },
+      "output_image_path": "kadamTal/peak_frames/peak_04_frame_000157_right.jpg"
+    },
+    {
+      "rank": 5,
+      "video_name": "kadamTal.mp4",
+      "frame_index": 207,
+      "timestamp_ms": 3787.77,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 57.41,
+      "knee_angle_deg": 88.33,
+      "foot_angle_deg": 96.25,
+      "grounded_knee_angle_deg": 175.94,
+      "left_elbow_angle_deg": 144.52,
+      "right_elbow_angle_deg": 169.39,
+      "left": {
+        "knee_angle_deg": 88.33,
+        "foot_angle_deg": 96.25,
+        "knee_lift_px": 57.41
+      },
+      "right": {
+        "knee_angle_deg": 175.94,
+        "foot_angle_deg": 113.25,
+        "knee_lift_px": -118.9
+      },
+      "score": {
+        "total": 8.23,
+        "peak_knee_angle": 10.0,
+        "peak_foot_angle": 9.07,
+        "grounded_leg": 9.88,
+        "hands": 3.98
+      },
+      "output_image_path": "kadamTal/peak_frames/peak_05_frame_000207_left.jpg"
+    },
+    {
+      "rank": 6,
+      "video_name": "kadamTal.mp4",
+      "frame_index": 252,
+      "timestamp_ms": 4611.2,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 42.22,
+      "knee_angle_deg": 69.88,
+      "foot_angle_deg": 105.21,
+      "grounded_knee_angle_deg": 174.3,
+      "left_elbow_angle_deg": 154.34,
+      "right_elbow_angle_deg": 166.68,
+      "left": {
+        "knee_angle_deg": 174.3,
+        "foot_angle_deg": 104.57,
+        "knee_lift_px": -113.83
+      },
+      "right": {
+        "knee_angle_deg": 69.88,
+        "foot_angle_deg": 105.21,
+        "knee_lift_px": 42.22
+      },
+      "score": {
+        "total": 6.59,
+        "peak_knee_angle": 6.63,
+        "peak_foot_angle": 5.65,
+        "grounded_leg": 9.14,
+        "hands": 4.97
+      },
+      "output_image_path": "kadamTal/peak_frames/peak_06_frame_000252_right.jpg"
+    },
+    {
+      "rank": 7,
+      "video_name": "kadamTal.mp4",
+      "frame_index": 287,
+      "timestamp_ms": 5251.65,
+      "peak_leg": "left",
+      "peak_knee_lift_px": 54.01,
+      "knee_angle_deg": 75.2,
+      "foot_angle_deg": 105.53,
+      "grounded_knee_angle_deg": 175.34,
+      "left_elbow_angle_deg": 140.63,
+      "right_elbow_angle_deg": 168.34,
+      "left": {
+        "knee_angle_deg": 75.2,
+        "foot_angle_deg": 105.53,
+        "knee_lift_px": 54.01
+      },
+      "right": {
+        "knee_angle_deg": 175.34,
+        "foot_angle_deg": 113.04,
+        "knee_lift_px": -121.24
+      },
+      "score": {
+        "total": 6.84,
+        "peak_knee_angle": 8.4,
+        "peak_foot_angle": 5.52,
+        "grounded_leg": 9.61,
+        "hands": 3.81
+      },
+      "output_image_path": "kadamTal/peak_frames/peak_07_frame_000287_left.jpg"
+    },
+    {
+      "rank": 8,
+      "video_name": "kadamTal.mp4",
+      "frame_index": 324,
+      "timestamp_ms": 5928.69,
+      "peak_leg": "right",
+      "peak_knee_lift_px": 18.95,
+      "knee_angle_deg": 99.44,
+      "foot_angle_deg": 121.63,
+      "grounded_knee_angle_deg": 179.47,
+      "left_elbow_angle_deg": 154.9,
+      "right_elbow_angle_deg": 162.4,
+      "left": {
+        "knee_angle_deg": 179.47,
+        "foot_angle_deg": 111.64,
+        "knee_lift_px": -115.68
+      },
+      "right": {
+        "knee_angle_deg": 99.44,
+        "foot_angle_deg": 121.63,
+        "knee_lift_px": 18.95
+      },
+      "score": {
+        "total": 5.3,
+        "peak_knee_angle": 6.85,
+        "peak_foot_angle": 0.0,
+        "grounded_leg": 10.0,
+        "hands": 4.34
+      },
+      "output_image_path": "kadamTal/peak_frames/peak_08_frame_000324_right.jpg"
+    }
+  ]
+}
