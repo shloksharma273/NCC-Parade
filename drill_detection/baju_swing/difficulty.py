@@ -38,6 +38,14 @@ def load_difficulty(cli_value: float | None = None) -> float:
     return DEFAULT_DIFFICULTY
 
 
+def scaled_value(difficulty: float, at_easy: float, at_hard: float) -> float:
+    # Single-value linear interpolation from easy (difficulty 0) to hard (5).
+    # Used for the front-view swing-spread full-reach target (§10.2): higher
+    # difficulty demands a higher fist to earn full marks.
+    t = _clamp(difficulty / MAX_DIFFICULTY, 0.0, 1.0)
+    return _lerp(at_easy, at_hard, t)
+
+
 def scaled_tolerances(
     difficulty: float,
     perfect_at_easy: float,

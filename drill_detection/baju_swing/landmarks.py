@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
+
 from .geometry import angle_at_joint, angle_between, to_pixel
 
 # --- Pose landmark indices (§5.1, same as kadam_tal) -----------------------
@@ -25,6 +27,11 @@ class BajuSwingFrameMetrics:
     timestamp_ms: float
     # Key-frame signal: angle between the two arm vectors (§6.1).
     inter_arm_angle_deg: float
+    # FRONT view: height of the HIGHER fist above the hip line, normalised by
+    # shoulder width. Doubles as the front key-frame signal (§10.1) and the
+    # swing-spread metric (§10.2). From POSE wrists (always detected), so it is
+    # available on every frame — unlike hand landmarks.
+    fist_height_norm: float
     # Elbow angles (arms straight, §6.2).
     left_elbow_angle_deg: float
     right_elbow_angle_deg: float
@@ -77,6 +84,13 @@ def compute_frame_metrics(
     #   inter_arm_angle = angle_between(a_L, a_R)
     inter_arm_angle = angle_between(lw - ls, rw - rs)
 
+    # Fist height (§10.1/§10.2): height of the higher fist above the hip line,
+    # normalised by shoulder width. Image y grows downward, so height above hip
+    # = hip_y - wrist_y; the higher fist has the larger value.
+    shoulder_width = max(float(np.linalg.norm(ls - rs)), 1.0)
+    hip_y = (lh[1] + rh[1]) / 2.0
+    fist_height = max(hip_y - lw[1], hip_y - rw[1]) / shoulder_width
+
     # Elbow interior angles (§6.2): angle_at_joint(shoulder, elbow, wrist)
     left_elbow_angle = angle_at_joint(ls, le, lw)
     right_elbow_angle = angle_at_joint(rs, re, rw)
@@ -89,6 +103,7 @@ def compute_frame_metrics(
         frame_index=frame_index,
         timestamp_ms=timestamp_ms,
         inter_arm_angle_deg=inter_arm_angle,
+        fist_height_norm=fist_height,
         left_elbow_angle_deg=left_elbow_angle,
         right_elbow_angle_deg=right_elbow_angle,
         left_knee_angle_deg=left_knee_angle,

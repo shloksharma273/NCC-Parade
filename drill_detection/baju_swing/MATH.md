@@ -26,9 +26,11 @@ hand pass:
 - **Pass 1 (pose, VIDEO mode):** every frame (subject to `every_k_frames`) is run
   through MediaPipe Holistic. Per frame we compute the **inter-arm angle** and the
   elbow/knee angles.
-- **Key frames:** local maxima of the inter-arm-angle signal are the swing
-  extremes (§4). There is **no fixed frame cap** — however many valid peaks exist
-  are all scored. `iteration_count = number of key frames`.
+- **Key frames:** local maxima of the key-frame signal are the swing extremes
+  (§4). The signal depends on the camera view (§10.1): inter-arm angle for the
+  side view, fist height for the front view. There is **no fixed frame cap** —
+  however many valid peaks exist are all scored. `iteration_count = number of
+  key frames`.
 - **Pass 2 (hands, IMAGE mode):** Holistic is re-run in IMAGE mode on the selected
   key frames only, because reliable hand landmarks come from the IMAGE runner.
   Fist and thumb are scored from those landmarks.
@@ -191,3 +193,104 @@ inter-arm → perfect 15.2°, fail 56°; knee → perfect 7.6°, fail 27°; fist
 Lowering the difficulty toward 0 widens every band and raises both totals;
 raising it toward 5 tightens them and lowers the totals — satisfying the
 monotonicity acceptance criterion.
+
+## 10. Camera view (side vs front)
+
+The drill can be filmed **side-on** or **front-on**; the UI lets the user pick,
+and `PipelineConfig.view ∈ {"side", "front"}` (default `"side"`) selects the
+mode. The front view is scored on a **different parameter set** (§10.4):
+`arms_straight` is dropped, and the **key-frame signal**, **swing spread** and
+**fist** metrics are redefined for the head-on camera. `legs_straight` and
+`thumb` are computed identically to the side view.
+
+| Parameter | Side view | Front view |
+|-----------|-----------|------------|
+| key-frame signal | inter-arm angle (§4) | higher fist height (§10.1) |
+| swing_spread | inter-arm angle vs 180° (§6.3) | fist height above hip, proportional (§10.2) |
+| fist | finger curl toward wrist (§6.5) | fingers-together via midpoints (§10.3) |
+| arms_straight | elbows vs 180° (§6.2) | **dropped** |
+| legs_straight / thumb | §6.4 / §6.6 | identical |
+
+### 10.1 Key-frame signal (`signals.py`)
+
+The peak finder (`find_swing_peaks`, §4) is view-agnostic: it takes any 1-D
+signal index-aligned with the frame metrics and returns its local maxima. The
+signal is built per view:
+
+- **Side view:** `inter_arm_angle(frame)` in degrees (§4). Prominence floor
+  `min_peak_prominence_floor_side = 5.0` (degrees).
+- **Front view:** height of the **higher** of the two fists above the hip line,
+  normalised by shoulder width (so the threshold is scale-invariant):
+
+  ```
+  shoulder_width = max(|shoulder_L − shoulder_R|, 1)
+  hip_y          = (hip_L.y + hip_R.y) / 2
+  height_H       = (hip_y − wrist_H.y) / shoulder_width      # H ∈ {L, R}
+  signal(frame)  = max(height_L, height_R)                   # "higher of two"
+  ```
+
+  Image `y` grows downward, so the subtraction makes a raised fist a local
+  **maximum**, matching the side-view convention. Prominence floor
+  `min_peak_prominence_floor_front = 0.08` (shoulder-width units).
+
+  With alternating arms, whichever fist is up dominates the max, so each
+  up-swing of either arm registers as one peak (one key frame).
+
+### 10.2 Swing spread — front view (`landmarks.py`, `scoring.py`)
+
+Side view scores swing spread from the inter-arm angle (§6.3). Front view scores
+**how high the raised fist is** — the same `fist_height` used for the key-frame
+signal (§10.1), which is the height of the higher fist above the hip line in
+shoulder-width units. Scoring is **proportional** (higher fist → more marks):
+
+```
+fist_height  = max(hip_y − wrist_L.y, hip_y − wrist_R.y) / shoulder_width
+full         = scaled_value(difficulty, FIST_HEIGHT_FULL_BAND)   # easy→hard
+swing_spread = 0                       if fist_height ≤ 0
+             = 10 · min(fist_height / full, 1)                   otherwise
+```
+
+`FIST_HEIGHT_FULL_BAND = (2.6, 3.2)` shoulder-widths (easy → hard) is the
+"max arm reach" at which the score saturates to 10 — TUNABLE dev values
+calibrated to the reference clip (fist heights ran 2.3–3.1 sw above the hip);
+higher difficulty demands a higher fist for full marks. A fist at or below the
+hip scores 0; it rises linearly to 10 as the fist approaches full reach.
+
+**Why fist height, not the two-hand distance:** the drill is an *alternating*
+swing, so at the "fist highest" key frame one arm is up and the other is
+down/back. The **hand** landmarker misses the down/back hand almost every time
+(empirically 1 of 17 key frames on the reference clip had both hands). Fist
+height uses only the **pose** wrists (reliably tracked every frame) and only the
+*raised* one matters, so it is always defined. The raw `fist_height_norm` is
+written to `results.json` per key frame for calibration.
+
+### 10.3 Fist — front view (`hand_analysis.py`)
+
+Side view scores the fist from finger curl toward the wrist (§6.5). Head-on, a
+closed fist shows its knuckle face, so front view instead scores **fingers
+held together**, using the four finger **midpoints** (PIP joints, indices 6/10/
+14/18 — the visible middle segment of a front-on fist):
+
+```
+centroid = mean(PIP_index, PIP_middle, PIP_ring, PIP_pinky)
+spread   = mean_F |PIP_F − centroid| / hand_scale        # F ∈ 4 fingers
+fist     = score_by_max(spread, Sp, Sf)
+```
+
+Fingers together ⇒ small spread ⇒ high score. `(Sp, Sf)` are the difficulty-
+scaled `FINGER_TOGETHER_BAND` (perfect 0.35→0.20, fail 0.80→0.55, midpoint-
+spread ratio). Uses whichever hand(s) are detected (the *raised* fist almost
+always is); no hand ⇒ fist scores 0. The raw `fingers_together_spread` is
+written to `results.json`.
+
+### 10.4 Front-view parameters & weights (`config.FRONT_WEIGHTS`)
+
+Front view drops `arms_straight` and emphasises the swing height:
+
+```
+frame_total = 0.40·swing_spread + 0.20·legs_straight + 0.20·fist + 0.20·thumb
+```
+
+`FrameScore.arms_straight` is `None` on the front view and is omitted from
+`results.json`, the annotated overlay, and the PDF/summary parameter tables.
+Aggregation (§8) is otherwise unchanged.

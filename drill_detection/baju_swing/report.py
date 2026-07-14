@@ -82,14 +82,17 @@ def _score_cell(rank: int, frame_index: int, total_score: float, styles) -> Para
 
 
 def _parameter_cell(score: dict, styles) -> Paragraph:
-    body = (
-        f"Arms Straight: {score['arms_straight']:.2f}/10<br/>"
-        f"Swing Spread: {score['swing_spread']:.2f}/10<br/>"
-        f"Legs Straight: {score['legs_straight']:.2f}/10<br/>"
-        f"Fist Closed: {score['fist']:.2f}/10<br/>"
-        f"Thumb On Top: {score['thumb']:.2f}/10"
-    )
-    return Paragraph(body, styles["CellBody"])
+    rows = []
+    # Arms Straight is only present in the SIDE view (§10.4).
+    if "arms_straight" in score:
+        rows.append(f"Arms Straight: {score['arms_straight']:.2f}/10")
+    rows += [
+        f"Swing Spread: {score['swing_spread']:.2f}/10",
+        f"Legs Straight: {score['legs_straight']:.2f}/10",
+        f"Fist Closed: {score['fist']:.2f}/10",
+        f"Thumb On Top: {score['thumb']:.2f}/10",
+    ]
+    return Paragraph("<br/>".join(rows), styles["CellBody"])
 
 
 def generate_pdf_report(

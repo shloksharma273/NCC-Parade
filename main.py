@@ -83,6 +83,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Salute: disable posture scoring.",
     )
 
+    # Baju swing-specific
+    parser.add_argument(
+        "--view",
+        choices=["side", "front"],
+        default="side",
+        help="Baju swing camera view: 'side' (inter-arm angle) or 'front' "
+        "(fist-height key frames + hand-tip separation). Default: side.",
+    )
+
     # Kadam tal-specific
     parser.add_argument("--smooth-window", type=int, default=5, help="Kadam tal: knee lift smoothing window.")
     parser.add_argument(
@@ -133,6 +142,7 @@ def main() -> None:
         config = BajuSwingConfig(
             input_path=args.input,
             output_dir=args.output_dir,
+            view=args.view,
             every_k_frames=args.every_k_frames,
             min_detection_confidence=args.min_detection_confidence,
             save_annotated_frames=not args.no_annotated,
@@ -142,7 +152,7 @@ def main() -> None:
             difficulty=difficulty,
         )
         summaries = run_baju_swing_pipeline(config)
-        print(f"\nBaju swing analysis completed (difficulty={difficulty:.1f}/5).\n")
+        print(f"\nBaju swing analysis completed (view={args.view}, difficulty={difficulty:.1f}/5).\n")
         for summary in summaries:
             print(f"Video: {summary['video']}")
             print(f"  Swings (iterations): {summary['iteration_count']}")

@@ -13,13 +13,14 @@ from mediapipe.tasks.python.vision import (
     RunningMode,
 )
 
-from .config import PipelineConfig
+from .config import FRONT_VIEW, FRONT_WEIGHTS, WEIGHTS, PipelineConfig
 from .hand_analysis import HandScore, analyze_hands_for_frames
 from .key_frame_detection import find_swing_peaks
 from .landmarks import BajuSwingFrameMetrics, compute_frame_metrics
 from .mediapipe_models import ensure_models
 from .report import generate_pdf_report
-from .scoring import FrameScore, score_swing_frame
+from .scoring import FrameScore, score_fist_height, score_swing_frame
+from .signals import build_key_frame_signal
 
 SUPPORTED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv"}
 
@@ -33,6 +34,7 @@ def _iter_videos(input_path: Path) -> list[Path]:
 def _key_frame_to_json(
     rank: int,
     video_name: str,
+    view: str,
     item: BajuSwingFrameMetrics,
     hand: HandScore,
     frame_score: FrameScore,
@@ -41,9 +43,18 @@ def _key_frame_to_json(
     return {
         "rank": rank,
         "video_name": video_name,
+        "view": view,
         "frame_index": item.frame_index,
         "timestamp_ms": round(item.timestamp_ms, 2),
         "inter_arm_angle_deg": round(item.inter_arm_angle_deg, 2),
+        # Raw front-view metrics (reported for scoring calibration): fist height
+        # above hip in shoulder-width units (swing spread, §10.2) and the
+        # fingers-together midpoint spread (fist, §10.3).
+        "fist_height_norm": round(item.fist_height_norm, 3),
+        "fingers_together_spread": (
+            None if hand.fingers_together_spread != hand.fingers_together_spread
+            else round(hand.fingers_together_spread, 3)
+        ),
         "left_elbow_angle_deg": round(item.left_elbow_angle_deg, 2),
         "right_elbow_angle_deg": round(item.right_elbow_angle_deg, 2),
         "left_knee_angle_deg": round(item.left_knee_angle_deg, 2),
@@ -59,6 +70,7 @@ def _draw_annotations(
     metrics: BajuSwingFrameMetrics,
     hand: HandScore,
     frame_score: FrameScore,
+    view: str,
 ) -> np.ndarray:
     rendered = frame.copy()
 
@@ -95,12 +107,31 @@ def _draw_annotations(
     for tip in hand.fingertips_px:
         dot(tip, (0, 255, 255), 3)
 
-    lines = [
-        f"Baju Swing  score {frame_score.total:.1f}/10",
-        f"Arms straight: {frame_score.arms_straight:.1f}/10  (fwd/back swing)",
-        f"Swing spread: {frame_score.swing_spread:.1f}/10  (inter-arm {metrics.inter_arm_angle_deg:.0f} deg)",
+    # FRONT view: mark the higher fist and its height above the hip line (the
+    # swing-spread metric); draw the hip reference line.
+    if view == FRONT_VIEW:
+        higher_wrist = (
+            metrics.left_wrist_px
+            if metrics.left_wrist_px[1] <= metrics.right_wrist_px[1]
+            else metrics.right_wrist_px
+        )
+        hip_y = (metrics.left_hip_px[1] + metrics.right_hip_px[1]) / 2.0
+        line(metrics.left_hip_px, metrics.right_hip_px, (0, 200, 0), 1)  # hip reference
+        line((higher_wrist[0], hip_y), higher_wrist, (0, 255, 0), 2)     # fist height
+        dot(higher_wrist, (255, 0, 255), 6)
+        spread_detail = f"fist-height {metrics.fist_height_norm:.2f}sw"
+        fist_label = "Fingers together"
+    else:
+        spread_detail = f"inter-arm {metrics.inter_arm_angle_deg:.0f} deg"
+        fist_label = "Fist closed"
+
+    lines = [f"Baju Swing [{view}]  score {frame_score.total:.1f}/10"]
+    if frame_score.arms_straight is not None:
+        lines.append(f"Arms straight: {frame_score.arms_straight:.1f}/10  (fwd/back swing)")
+    lines += [
+        f"Swing spread: {frame_score.swing_spread:.1f}/10  ({spread_detail})",
         f"Legs straight: {frame_score.legs_straight:.1f}/10",
-        f"Fist closed: {frame_score.fist:.1f}/10   Thumb on top: {frame_score.thumb:.1f}/10",
+        f"{fist_label}: {frame_score.fist:.1f}/10   Thumb on top: {frame_score.thumb:.1f}/10",
     ]
     y = 26
     for text in lines:
@@ -187,12 +218,22 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         cap.release()
         holistic.close()
 
+    # Key-frame signal is view-dependent (§10.1): side = inter-arm angle,
+    # front = height of the higher fist. The peak finder is view-agnostic.
+    signal = build_key_frame_signal(metrics, config.view)
+    prominence_floor = (
+        config.min_peak_prominence_floor_front
+        if config.view == FRONT_VIEW
+        else config.min_peak_prominence_floor_side
+    )
     key_frames_metrics = find_swing_peaks(
         metrics,
+        signal=signal,
         smooth_window=config.smooth_window,
         min_distance=config.min_peak_distance_frames,
-        min_prominence_deg=config.min_peak_prominence_deg,
+        min_prominence_abs=config.min_peak_prominence_deg,
         min_prominence_ratio=config.min_peak_prominence_ratio,
+        min_prominence_floor=prominence_floor,
     )
 
     # ------------------------------------------------------------------
@@ -203,13 +244,23 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         frame_indices=[m.frame_index for m in key_frames_metrics],
         min_confidence=config.min_detection_confidence,
         difficulty=config.difficulty,
+        view=config.view,
     )
+
+    weights = FRONT_WEIGHTS if config.view == FRONT_VIEW else WEIGHTS
 
     key_frames: list[dict] = []
     frame_totals: list[float] = []
 
     for rank, item in enumerate(key_frames_metrics, start=1):
         hand = hand_scores.get(item.frame_index, HandScore(item.frame_index, 0.0, 0.0, 0))
+        # FRONT view: swing spread = scored hand-tip separation (§10.2). SIDE
+        # view leaves it None so scoring uses the inter-arm angle.
+        # FRONT view: swing spread = pre-scored fist height (§10.2). SIDE view
+        # leaves it None so scoring uses the inter-arm angle.
+        swing_spread_score = None
+        if config.view == FRONT_VIEW:
+            swing_spread_score = score_fist_height(item.fist_height_norm, config.difficulty)
         frame_score = score_swing_frame(
             inter_arm_angle_deg=item.inter_arm_angle_deg,
             left_elbow_angle_deg=item.left_elbow_angle_deg,
@@ -222,6 +273,8 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
             target_arm_angle_deg=config.target_arm_angle_deg,
             target_inter_arm_angle_deg=config.target_inter_arm_angle_deg,
             target_knee_angle_deg=config.target_knee_angle_deg,
+            weights=weights,
+            swing_spread_score=swing_spread_score,
         )
         frame_totals.append(frame_score.total)
 
@@ -230,7 +283,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         if frame_bgr is not None:
             file_base = f"swing_{rank:02d}_frame_{item.frame_index:06d}"
             if config.save_annotated_frames:
-                annotated = _draw_annotations(frame_bgr, item, hand, frame_score)
+                annotated = _draw_annotations(frame_bgr, item, hand, frame_score, config.view)
                 annotated_path = annotated_dir / f"{file_base}.jpg"
                 cv2.imwrite(str(annotated_path), annotated)
                 image_rel_path = str(annotated_path.relative_to(config.output_dir))
@@ -239,7 +292,9 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
                 cv2.imwrite(str(raw_path), frame_bgr)
 
         key_frames.append(
-            _key_frame_to_json(rank, video_path.name, item, hand, frame_score, image_rel_path)
+            _key_frame_to_json(
+                rank, video_path.name, config.view, item, hand, frame_score, image_rel_path
+            )
         )
 
     # Aggregation (§6.7): iteration_count = number of key frames.
@@ -249,6 +304,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
 
     result_payload = {
         "video_name": video_path.name,
+        "view": config.view,
         "difficulty": config.difficulty,
         "report_metadata": config.report_metadata.to_dict() if config.report_metadata else None,
         "summary": {

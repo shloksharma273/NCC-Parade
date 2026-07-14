@@ -42,6 +42,7 @@ class DrillAnalyzer:
         drill_type: str,
         session_id: str,
         progress_callback: ProgressCallback | None = None,
+        view: str = "side",
     ) -> dict:
         if drill_type not in SUPPORTED_DRILL_TYPES:
             raise ValueError(f"Unsupported drill type: {drill_type}")
@@ -51,7 +52,9 @@ class DrillAnalyzer:
         if drill_type == "kadam_tal":
             return self._analyze_kadam_tal(video_path, session_id, progress_callback)
         if drill_type == "baju_swing":
-            return self._analyze_baju_swing(video_path, session_id, progress_callback)
+            # view ("side" | "front") selects the baju_swing analysis mode; the
+            # UI will surface this choice. Other drills ignore it.
+            return self._analyze_baju_swing(video_path, session_id, progress_callback, view)
         raise ValueError(f"Drill type '{drill_type}' is not implemented yet.")
 
     def _session_metadata(self, session_id: str) -> ReportMetadata:
@@ -82,6 +85,7 @@ class DrillAnalyzer:
         video_path: str,
         session_id: str,
         progress_callback: ProgressCallback | None,
+        view: str = "side",
     ) -> dict:
         from drill_detection.baju_swing.config import PipelineConfig as BajuSwingConfig
         from drill_detection.baju_swing.pipeline import process_video as process_baju_swing_video
@@ -99,6 +103,7 @@ class DrillAnalyzer:
         config = BajuSwingConfig(
             input_path=Path(video_path),
             output_dir=output_dir,
+            view=view,
             difficulty=settings.ml_difficulty,
             save_annotated_frames=True,
             report_metadata=self._session_metadata_or_default(session_id, "baju_swing"),
@@ -342,7 +347,10 @@ class DrillAnalyzer:
 
         parameters = []
         for name, key, expected, feedback in keys:
-            values = [frame["score"][key] for frame in key_frames]
+            # FRONT view drops arms_straight (§10.4), so a key may be absent.
+            values = [frame["score"][key] for frame in key_frames if key in frame["score"]]
+            if not values:
+                continue
             avg = sum(values) / len(values)
             status = "pass" if avg >= 7 else "needs_correction" if avg >= 5 else "fail"
             parameters.append(

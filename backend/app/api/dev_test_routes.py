@@ -44,6 +44,8 @@ class RunRequest(BaseModel):
     video: str
     drill_type: str = "baju_swing"
     difficulty: float | None = None
+    # baju_swing camera view: "side" (default) or "front". Ignored by other drills.
+    view: str = "side"
 
 
 def _scan_videos() -> list[dict]:
@@ -111,6 +113,7 @@ def run_analysis(req: RunRequest) -> JSONResponse:
             str(video_path),
             req.drill_type,
             session_id="DEVTEST-BAJU",
+            view=req.view,
         )
     except Exception as exc:  # noqa: BLE001 - surface a clean error to the client
         return JSONResponse(

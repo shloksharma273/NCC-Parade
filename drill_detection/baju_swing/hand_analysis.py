@@ -14,6 +14,7 @@ from mediapipe.tasks.python.vision import (
 )
 
 from . import config as cfg
+from .config import FRONT_VIEW
 from .difficulty import scaled_tolerances
 from .geometry import to_pixel
 from .mediapipe_models import ensure_models
@@ -51,6 +52,10 @@ _FINGERS = (
     (PINKY_MCP, PINKY_TIP),
 )
 
+# Finger MIDPOINTS (PIP joints) — the visible face of a front-on closed fist.
+# Used for the FRONT-view "fingers together" fist score (§10.3).
+_MIDPOINTS = (INDEX_PIP, MIDDLE_PIP, RING_PIP, PINKY_PIP)
+
 
 @dataclass
 class HandScore:
@@ -60,6 +65,10 @@ class HandScore:
     hands_detected: int
     # Fingertip pixel coords (per detected hand) for optional annotation.
     fingertips_px: list[tuple[float, float]] = field(default_factory=list)
+    # FRONT view (§10.3): raw fingers-together spread (mean midpoint distance
+    # from centroid / hand scale), averaged across detected hands. NaN on side
+    # view or when no hand is detected. Reported for calibration.
+    fingers_together_spread: float = float("nan")
 
 
 def _hand_point(hand_landmarks, index: int, width: int, height: int) -> np.ndarray:
@@ -105,6 +114,16 @@ def _thumb_score_for_hand(hand_landmarks, width: int, height: int, perfect: floa
     return score_by_max(gap, perfect, fail)
 
 
+def _fingers_together_spread(hand_landmarks, width: int, height: int) -> float:
+    """FRONT-view fist metric (§10.3): mean distance of the four finger
+    MIDPOINTS (PIP joints) from their centroid, normalised by hand scale.
+    Fingers held together => small spread; splayed => large."""
+    scale = _hand_scale(hand_landmarks, width, height)
+    mids = [_hand_point(hand_landmarks, i, width, height) for i in _MIDPOINTS]
+    centroid = np.mean(mids, axis=0)
+    return float(np.mean([float(np.linalg.norm(m - centroid)) for m in mids])) / scale
+
+
 def _create_image_landmarker(min_confidence: float) -> HolisticLandmarker:
     # IMAGE-mode Holistic pass for reliable hand landmarks (reuse salute pattern).
     model_path = ensure_models()
@@ -135,14 +154,20 @@ def analyze_hands_for_frames(
     frame_indices: list[int],
     min_confidence: float,
     difficulty: float,
+    view: str,
 ) -> dict[int, HandScore]:
     """Pass 2: re-run Holistic in IMAGE mode on the key frames and score the
-    fist closure (§6.5) and thumb-on-top (§6.6) for each. Scores both hands and
-    averages them; falls back to the single detected hand (salute pattern);
-    missing hand landmarks => that parameter scores 0."""
+    fist and thumb-on-top (§6.6) for each. Scores both hands and averages them;
+    falls back to the single detected hand (salute pattern); missing hand
+    landmarks => that parameter scores 0.
+
+    The fist metric depends on the view: SIDE uses finger curl toward the wrist
+    (§6.5); FRONT uses fingers-together via the finger midpoints (§10.3)."""
     # Difficulty-scaled hand-ratio thresholds (all flow through scaled_tolerances).
     fist_perfect, fist_fail = scaled_tolerances(difficulty, *cfg.FIST_CURL_BAND)
     thumb_perfect, thumb_fail = scaled_tolerances(difficulty, *cfg.THUMB_GAP_BAND)
+    together_perfect, together_fail = scaled_tolerances(difficulty, *cfg.FINGER_TOGETHER_BAND)
+    front = view == FRONT_VIEW
 
     results: dict[int, HandScore] = {}
     landmarker = _create_image_landmarker(min_confidence)
@@ -158,18 +183,24 @@ def analyze_hands_for_frames(
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
             result = landmarker.detect(mp_image)
 
-            hands = []
-            if result.left_hand_landmarks:
-                hands.append(result.left_hand_landmarks)
-            if result.right_hand_landmarks:
-                hands.append(result.right_hand_landmarks)
+            left_hand = result.left_hand_landmarks or None
+            right_hand = result.right_hand_landmarks or None
+            hands = [h for h in (left_hand, right_hand) if h]
 
             if not hands:
                 # Missing hand landmarks => fist and thumb score 0 (§6.5/§6.6).
                 results[frame_index] = HandScore(frame_index, 0.0, 0.0, 0)
                 continue
 
-            fist_vals = [_fist_score_for_hand(h, width, height, fist_perfect, fist_fail) for h in hands]
+            # Fist metric is view-dependent (§10.3): FRONT = fingers-together
+            # (midpoint spread, smaller better); SIDE = finger curl (§6.5).
+            together_spread = float("nan")
+            if front:
+                spreads = [_fingers_together_spread(h, width, height) for h in hands]
+                fist_vals = [score_by_max(s, together_perfect, together_fail) for s in spreads]
+                together_spread = float(np.mean(spreads))
+            else:
+                fist_vals = [_fist_score_for_hand(h, width, height, fist_perfect, fist_fail) for h in hands]
             thumb_vals = [_thumb_score_for_hand(h, width, height, thumb_perfect, thumb_fail) for h in hands]
             fingertips = [
                 (float(_hand_point(h, tip, width, height)[0]), float(_hand_point(h, tip, width, height)[1]))
@@ -182,6 +213,7 @@ def analyze_hands_for_frames(
                 thumb_score=float(np.mean(thumb_vals)),
                 hands_detected=len(hands),
                 fingertips_px=fingertips,
+                fingers_together_spread=together_spread,
             )
     finally:
         landmarker.close()

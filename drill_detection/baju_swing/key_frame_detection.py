@@ -4,10 +4,6 @@ import numpy as np
 
 from .landmarks import BajuSwingFrameMetrics
 
-# Minimum prominence floor (degrees) when auto-deriving prominence from the
-# signal range, so tiny jitter is never treated as a real swing extreme.
-MIN_PROMINENCE_FLOOR_DEG = 5.0
-
 
 def smooth_signal(values: np.ndarray, window: int) -> np.ndarray:
     # Copied verbatim from kadam_tal/peak_detection.py (moving-average smoothing).
@@ -19,30 +15,35 @@ def smooth_signal(values: np.ndarray, window: int) -> np.ndarray:
 
 def find_swing_peaks(
     metrics: list[BajuSwingFrameMetrics],
+    signal: np.ndarray,
     smooth_window: int,
     min_distance: int,
-    min_prominence_deg: float | None,
+    min_prominence_abs: float | None,
     min_prominence_ratio: float,
+    min_prominence_floor: float,
 ) -> list[BajuSwingFrameMetrics]:
-    """Key frames = local maxima of the inter-arm-angle signal (§2.1, §6.1).
+    """Key frames = local maxima of ``signal`` (§2.1, §10.1).
 
-    Same prominence/min-distance/smoothing algorithm as
-    kadam_tal.peak_detection.find_knee_peaks, with the signal switched from
-    knee-lift pixels to inter-arm angle in degrees.
+    View-agnostic: the caller supplies the per-frame signal (side = inter-arm
+    angle in degrees, front = fist height in shoulder-width units; see
+    signals.py) index-aligned with ``metrics``. Same prominence/min-distance/
+    smoothing algorithm as kadam_tal.peak_detection.find_knee_peaks.
+
+    Prominence threshold = ``min_prominence_abs`` if given, else
+    ``max(min_prominence_floor, signal_range * min_prominence_ratio)`` — the
+    floor keeps tiny jitter from registering as a swing and is in the signal's
+    own units (degrees for side, shoulder-widths for front).
     """
     if not metrics:
         return []
 
-    signal = np.array([m.inter_arm_angle_deg for m in metrics], dtype=float)
-    # NaN inter-arm angle (missing landmarks) cannot be a swing extreme.
-    signal = np.nan_to_num(signal, nan=0.0)
-    smoothed = smooth_signal(signal, smooth_window)
+    smoothed = smooth_signal(np.asarray(signal, dtype=float), smooth_window)
 
-    angle_range = float(smoothed.max() - smoothed.min())
-    prominence = min_prominence_deg
+    signal_range = float(smoothed.max() - smoothed.min())
+    prominence = min_prominence_abs
     if prominence is None:
         # prominence = max(floor, range * ratio)
-        prominence = max(MIN_PROMINENCE_FLOOR_DEG, angle_range * min_prominence_ratio)
+        prominence = max(min_prominence_floor, signal_range * min_prominence_ratio)
 
     peak_indices = _find_local_maxima(smoothed, min_distance, prominence)
     return [metrics[i] for i in peak_indices]
