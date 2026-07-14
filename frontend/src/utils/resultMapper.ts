@@ -33,6 +33,7 @@ export const DRILL_OPTIONS = [
   { value: "salute", label: "Salute", cameraView: "Front", backendSupported: true },
   { value: "kadam_tal", label: "Kadam Tal", cameraView: "Side", backendSupported: true },
   { value: "baju_swing", label: "Baju Swing", cameraView: "Front", backendSupported: true },
+  { value: "slow_march", label: "Slow March", cameraView: "Side", backendSupported: true },
   { value: "slow_march_track", label: "Slow March Track", cameraView: "Side", backendSupported: false },
   { value: "tez_march", label: "Tez March", cameraView: "Side", backendSupported: false },
   { value: "hill_march", label: "Hill March", cameraView: "Side", backendSupported: false },
