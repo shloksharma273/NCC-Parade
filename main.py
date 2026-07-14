@@ -3,26 +3,29 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from salute_detector.config import PipelineConfig as SaluteConfig
-from salute_detector.difficulty import load_difficulty
-from salute_detector.pipeline import run_pipeline as run_salute_pipeline
+from drill_detection.salute.config import PipelineConfig as SaluteConfig
+from drill_detection.salute.difficulty import load_difficulty
+from drill_detection.salute.pipeline import run_pipeline as run_salute_pipeline
 
-from knee_peak_detector.config import PipelineConfig as KadamTalConfig
-from knee_peak_detector.pipeline import run_pipeline as run_kadam_tal_pipeline
+from drill_detection.kadam_tal.config import PipelineConfig as KadamTalConfig
+from drill_detection.kadam_tal.pipeline import run_pipeline as run_kadam_tal_pipeline
+
+from drill_detection.slow_march.config import PipelineConfig as SlowMarchConfig
+from drill_detection.slow_march.pipeline import run_pipeline as run_slow_march_pipeline
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run drill analysis pipelines (salute or kadam tal).")
+    parser = argparse.ArgumentParser(description="Run drill analysis pipelines (salute, kadam tal, or slow march).")
     parser.add_argument(
         "--drill",
-        choices=["salute", "kadam_tal"],
+        choices=["salute", "kadam_tal", "slow_march"],
         default="kadam_tal",
         help="Drill type to analyze (default: kadam_tal).",
     )
     parser.add_argument(
         "--input",
         type=Path,
-        default=Path("data"),
+        default=Path("test_data/dataset"),
         help="Input video file or directory (default: data).",
     )
     parser.add_argument(
@@ -80,13 +83,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Salute: disable posture scoring.",
     )
 
-    # Kadam tal-specific
-    parser.add_argument("--smooth-window", type=int, default=5, help="Kadam tal: knee lift smoothing window.")
+    # Shared by kadam tal + slow march (signal smoothing / peak spacing)
+    parser.add_argument("--smooth-window", type=int, default=5, help="Kadam tal / slow march: signal smoothing window.")
     parser.add_argument(
         "--min-peak-distance",
         type=int,
         default=15,
-        help="Kadam tal: minimum frame distance between peaks.",
+        help="Kadam tal / slow march: minimum frame distance between peaks.",
+    )
+
+    # Slow march-specific
+    parser.add_argument(
+        "--view",
+        choices=["front", "side"],
+        default="side",
+        help="Slow march: camera view (default: side).",
+    )
+    parser.add_argument(
+        "--key-frame-signal",
+        choices=["auto", "foot_passing", "stride", "perpendicular_hind", "merged", "inter_leg_angle"],
+        default="auto",
+        help=(
+            "Slow march: key-frame detector. 'auto' (default) uses the ACTIVE foot-passing "
+            "detector (both feet flat + legs together) for side view; 'stride' / "
+            "'perpendicular_hind' / 'merged' are the earlier stride-based detectors; "
+            "'inter_leg_angle' is the front-view fallback."
+        ),
     )
     return parser
 
@@ -125,6 +147,37 @@ def main() -> None:
 
     if args.smooth_window <= 0 or args.min_peak_distance <= 0:
         raise ValueError("--smooth-window and --min-peak-distance must be >= 1")
+
+    if args.drill == "slow_march":
+        config = SlowMarchConfig(
+            input_path=args.input,
+            output_dir=args.output_dir,
+            every_k_frames=args.every_k_frames,
+            min_detection_confidence=args.min_detection_confidence,
+            save_annotated_frames=not args.no_annotated,
+            save_raw_frames=args.save_raw_frames,
+            smooth_window=args.smooth_window,
+            min_peak_distance_frames=args.min_peak_distance,
+            difficulty=difficulty,
+            view=args.view,
+            key_frame_signal=args.key_frame_signal,
+        )
+        summaries = run_slow_march_pipeline(config)
+        print(
+            f"\nSlow march analysis completed "
+            f"(difficulty={difficulty:.1f}/5, view={args.view}, key_frame_signal={args.key_frame_signal}).\n"
+        )
+        for summary in summaries:
+            print(f"Video: {summary['video']}")
+            print(f"  Steps (iterations): {summary['iteration_count']}")
+            print(f"  Total score: {summary['total_score']}")
+            print(f"  Average score/step: {summary['average_score']}")
+            print(f"  JSON: {summary['results_json']}")
+            if summary.get("report_pdf"):
+                print(f"  PDF: {summary['report_pdf']}")
+            print()
+        return
+
     config = KadamTalConfig(
         input_path=args.input,
         output_dir=args.output_dir,

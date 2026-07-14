@@ -3,8 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from drill_report_metadata import ReportMetadata
-from knee_peak_detector.report import generate_pdf_report
+from drill_detection.report_metadata import ReportMetadata
+from drill_detection.kadam_tal.report import generate_pdf_report
 
 
 def build_parser() -> argparse.ArgumentParser:

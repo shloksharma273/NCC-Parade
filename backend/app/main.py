@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .api.camera_routes import router as camera_router
 from .api.decision_routes import router as decision_router
+from .api.dev_test_routes import router as dev_test_router  # TEMPORARY dev-only test harness
 from .api.pairing_routes import router as pairing_router
 from .api.readiness_routes import router as readiness_router
 from .api.recording_routes import router as recording_router
@@ -23,7 +24,7 @@ from .db.database import init_db
 from .ml.drill_analyzer import drill_analyzer
 from .startup_banner import print_startup_banner
 
-WEBAPP_DIR = PROJECT_ROOT / "tablet-webapp" / "dist"
+WEBAPP_DIR = PROJECT_ROOT / "frontend" / "dist"
 
 
 @asynccontextmanager
@@ -60,7 +61,14 @@ app.include_router(report_router)
 app.include_router(decision_router)
 app.include_router(websocket_router)
 
+# --- TEMPORARY dev-only test harness (slow_march); remove when camera flow is wired up ---
+app.include_router(dev_test_router)
+
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
+
+# TEMPORARY: expose ml_output so the dev test page can load annotated frames + PDFs.
+settings.ml_output_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/dev/test/output", StaticFiles(directory=str(settings.ml_output_dir)), name="dev-test-output")
 
 if WEBAPP_DIR.exists():
     assets_dir = WEBAPP_DIR / "assets"

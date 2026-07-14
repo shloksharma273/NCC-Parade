@@ -6,7 +6,7 @@ from ..config import SUPPORTED_DRILL_TYPES
 from ..db.repositories import ProgressRepository, SessionRepository
 from ..models.api_models import CreateSessionRequest
 from ..models.session_models import SessionStatus, can_transition
-from ..services.camera_service import camera_service
+from ..video_pipeline.camera_service import camera_service
 from ..services.storage_service import storage_service
 from ..utils.id_generator import generate_session_id
 from ..utils.time_utils import utc_now_iso

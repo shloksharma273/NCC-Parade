@@ -5,7 +5,7 @@ from fastapi.responses import Response
 
 from ..config import FRAMES_MEDIA_DIR
 from ..models.api_models import InstructorDecisionRequest, InstructorDecisionResponse
-from ..services.camera_service import camera_service
+from ..video_pipeline.camera_service import camera_service
 from ..services.session_service import session_service
 from ..utils.time_utils import utc_now_iso
 

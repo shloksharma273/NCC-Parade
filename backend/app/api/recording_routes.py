@@ -4,10 +4,10 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from ..models.api_models import ActionResponse, ProgressResponse
 from ..models.session_models import SessionStatus
-from ..services.camera_service import camera_service
-from ..services.preview_service import preview_service
+from ..video_pipeline.camera_service import camera_service
+from ..video_pipeline.preview_service import preview_service
 from ..services.processing_service import processing_service
-from ..services.recording_service import recording_service
+from ..video_pipeline.recording_service import recording_service
 from ..services.session_service import session_service
 from ..services.websocket_manager import ws_manager
 from ..utils.time_utils import utc_now_iso
