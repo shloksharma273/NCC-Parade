@@ -193,6 +193,7 @@ _PAGE_HTML = """<!doctype html>
       <label for="drill">Drill type</label>
       <select id="drill">
         <option value="baju_swing">baju_swing</option>
+        <option value="slow_march">slow_march</option>
         <option value="kadam_tal">kadam_tal</option>
         <option value="salute">salute</option>
       </select>

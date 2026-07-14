@@ -9,6 +9,7 @@ Computer vision pipelines for NCC drill analysis, with a PC backend server and t
 | **Kadam Tal** | `drill_detection/kadam_tal/` | Detects knee peak frames, scores posture, generates PDF report |
 | **Salute** | `drill_detection/salute/` | Finds salute candidate frames, scores posture (elbow, heels, hands) |
 | **Baju Swing** | `drill_detection/baju_swing/` | Detects arm-swing extremes (key frames), scores arms/swing/legs/fist/thumb, generates PDF report |
+| **Slow March** | `drill_detection/slow_march/` | Detects step extremes (front leg farthest + hind leg planted), scores arms/look-front/grounded-leg/front-foot (mandatory foot gate), generates PDF report |
 
 ## Setup
 
@@ -34,6 +35,11 @@ python main.py --drill salute --input test_data/dataset/front_salute.mp4
 **Baju swing:**
 ```bash
 python main.py --drill baju_swing --input test_data/dataset/your_video.mp4 --difficulty 2
+```
+
+**Slow march:** (camera view defaults to `side`; use `--view front` for front-facing clips)
+```bash
+python main.py --drill slow_march --input test_data/dataset/your_video.mp4 --view side
 ```
 
 **Kadam tal PDF report:**
@@ -65,7 +71,7 @@ On startup the server prints a QR code and serves:
 
 **Tablet pairing:** Scan the terminal or `/pair` QR code from the tablet. The webapp auto-saves the backend URL — no manual IP entry needed.
 
-Create a session with `"drill_type": "salute"` or `"drill_type": "kadam_tal"`.
+Create a session with `"drill_type": "salute"`, `"drill_type": "kadam_tal"`, or `"drill_type": "slow_march"`.
 
 See [backend/README.md](backend/README.md).
 

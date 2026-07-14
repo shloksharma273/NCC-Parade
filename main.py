@@ -13,12 +13,17 @@ from drill_detection.kadam_tal.pipeline import run_pipeline as run_kadam_tal_pip
 from drill_detection.baju_swing.config import PipelineConfig as BajuSwingConfig
 from drill_detection.baju_swing.pipeline import run_pipeline as run_baju_swing_pipeline
 
+from drill_detection.slow_march.config import PipelineConfig as SlowMarchConfig
+from drill_detection.slow_march.pipeline import run_pipeline as run_slow_march_pipeline
+
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run drill analysis pipelines (salute, kadam tal or baju swing).")
+    parser = argparse.ArgumentParser(
+        description="Run drill analysis pipelines (salute, kadam tal, baju swing, or slow march)."
+    )
     parser.add_argument(
         "--drill",
-        choices=["salute", "kadam_tal", "baju_swing"],
+        choices=["salute", "kadam_tal", "baju_swing", "slow_march"],
         default="kadam_tal",
         help="Drill type to analyze (default: kadam_tal).",
     )
@@ -83,22 +88,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Salute: disable posture scoring.",
     )
 
-    # Baju swing-specific
-    parser.add_argument(
-        "--view",
-        choices=["side", "front"],
-        default="side",
-        help="Baju swing camera view: 'side' (inter-arm angle) or 'front' "
-        "(fist-height key frames + hand-tip separation). Default: side.",
-    )
-
-    # Kadam tal-specific
-    parser.add_argument("--smooth-window", type=int, default=5, help="Kadam tal: knee lift smoothing window.")
+    # Shared signal smoothing / peak spacing (kadam tal, slow march, baju swing)
+    parser.add_argument("--smooth-window", type=int, default=5, help="Kadam tal / slow march: signal smoothing window.")
     parser.add_argument(
         "--min-peak-distance",
         type=int,
         default=15,
-        help="Kadam tal: minimum frame distance between peaks.",
+        help="Kadam tal / slow march: minimum frame distance between peaks.",
+    )
+
+    # Camera view, shared by slow march and baju swing (default: side)
+    parser.add_argument(
+        "--view",
+        choices=["front", "side"],
+        default="side",
+        help="Slow march / baju swing: camera view (default: side).",
+    )
+    parser.add_argument(
+        "--key-frame-signal",
+        choices=["auto", "foot_passing", "stride", "perpendicular_hind", "merged", "inter_leg_angle"],
+        default="auto",
+        help=(
+            "Slow march: key-frame detector. 'auto' (default) uses the ACTIVE foot-passing "
+            "detector (both feet flat + legs together) for side view; 'stride' / "
+            "'perpendicular_hind' / 'merged' are the earlier stride-based detectors; "
+            "'inter_leg_angle' is the front-view fallback."
+        ),
     )
     return parser
 
@@ -158,6 +173,36 @@ def main() -> None:
             print(f"  Swings (iterations): {summary['iteration_count']}")
             print(f"  Total score: {summary['total_score']}")
             print(f"  Average score/swing: {summary['average_score']}")
+            print(f"  JSON: {summary['results_json']}")
+            if summary.get("report_pdf"):
+                print(f"  PDF: {summary['report_pdf']}")
+            print()
+        return
+
+    if args.drill == "slow_march":
+        config = SlowMarchConfig(
+            input_path=args.input,
+            output_dir=args.output_dir,
+            every_k_frames=args.every_k_frames,
+            min_detection_confidence=args.min_detection_confidence,
+            save_annotated_frames=not args.no_annotated,
+            save_raw_frames=args.save_raw_frames,
+            smooth_window=args.smooth_window,
+            min_peak_distance_frames=args.min_peak_distance,
+            difficulty=difficulty,
+            view=args.view,
+            key_frame_signal=args.key_frame_signal,
+        )
+        summaries = run_slow_march_pipeline(config)
+        print(
+            f"\nSlow march analysis completed "
+            f"(difficulty={difficulty:.1f}/5, view={args.view}, key_frame_signal={args.key_frame_signal}).\n"
+        )
+        for summary in summaries:
+            print(f"Video: {summary['video']}")
+            print(f"  Steps (iterations): {summary['iteration_count']}")
+            print(f"  Total score: {summary['total_score']}")
+            print(f"  Average score/step: {summary['average_score']}")
             print(f"  JSON: {summary['results_json']}")
             if summary.get("report_pdf"):
                 print(f"  PDF: {summary['report_pdf']}")

@@ -22,7 +22,7 @@ REPORTS_DIR = BACKEND_ROOT / "reports"
 DATABASE_DIR = BACKEND_ROOT / "database"
 DATABASE_PATH = DATABASE_DIR / "drill_server.db"
 
-SUPPORTED_DRILL_TYPES = {"kadam_tal", "salute", "baju_swing"}
+SUPPORTED_DRILL_TYPES = {"kadam_tal", "salute", "baju_swing", "slow_march"}
 
 
 def _env_bool(name: str, default: bool) -> bool:

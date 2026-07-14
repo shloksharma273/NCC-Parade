@@ -70,6 +70,10 @@ mount_dev_test_output(app)
 
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
+# TEMPORARY: expose ml_output so the dev test page can load annotated frames + PDFs.
+settings.ml_output_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/dev/test/output", StaticFiles(directory=str(settings.ml_output_dir)), name="dev-test-output")
+
 if WEBAPP_DIR.exists():
     assets_dir = WEBAPP_DIR / "assets"
     if assets_dir.exists():
