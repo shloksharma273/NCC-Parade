@@ -473,7 +473,7 @@ class DrillAnalyzer:
             return []
 
         keys = [
-            ("Peak Knee Angle", "peak_knee_angle", "90°", "Keep peak leg knee angle close to 90 degrees."),
+            ("Peak Knee Angle", "peak_knee_angle", "80-90°", "Keep peak leg knee angle within 80 to 90 degrees."),
             ("Peak Foot Angle", "peak_foot_angle", "90°", "Maintain 90 degree angle between shin and foot."),
             ("Grounded Leg", "grounded_leg", "180° (straight)", "Keep the grounded leg straight."),
             ("Hands", "hands", "180° (straight arms)", "Keep both arms straight throughout the drill."),
