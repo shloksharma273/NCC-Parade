@@ -99,6 +99,17 @@ def build_parser() -> argparse.ArgumentParser:
         default="side",
         help="Slow march: camera view (default: side).",
     )
+    parser.add_argument(
+        "--key-frame-signal",
+        choices=["auto", "foot_passing", "stride", "perpendicular_hind", "merged", "inter_leg_angle"],
+        default="auto",
+        help=(
+            "Slow march: key-frame detector. 'auto' (default) uses the ACTIVE foot-passing "
+            "detector (both feet flat + legs together) for side view; 'stride' / "
+            "'perpendicular_hind' / 'merged' are the earlier stride-based detectors; "
+            "'inter_leg_angle' is the front-view fallback."
+        ),
+    )
     return parser
 
 
@@ -149,9 +160,13 @@ def main() -> None:
             min_peak_distance_frames=args.min_peak_distance,
             difficulty=difficulty,
             view=args.view,
+            key_frame_signal=args.key_frame_signal,
         )
         summaries = run_slow_march_pipeline(config)
-        print(f"\nSlow march analysis completed (difficulty={difficulty:.1f}/5, view={args.view}).\n")
+        print(
+            f"\nSlow march analysis completed "
+            f"(difficulty={difficulty:.1f}/5, view={args.view}, key_frame_signal={args.key_frame_signal}).\n"
+        )
         for summary in summaries:
             print(f"Video: {summary['video']}")
             print(f"  Steps (iterations): {summary['iteration_count']}")

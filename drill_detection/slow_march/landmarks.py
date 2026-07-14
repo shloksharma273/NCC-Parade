@@ -76,6 +76,10 @@ class SlowMarchFrameMetrics:
     # hind_foot_speed_norm: grounded-ankle per-frame horizontal speed / body scale (0 == planted).
     stride_separation_norm: float = 0.0
     hind_foot_speed_norm: float = 0.0
+    # "foot_passing" detector diagnostics (0 == ideal): both soles flat + legs together.
+    hind_foot_flat_deg: float = 0.0     # hind sole angle to horizontal (0 == grounded flat)
+    front_foot_flat_deg: float = 0.0    # front sole angle to horizontal (0 == parallel to ground)
+    inter_leg_split_deg: float = 0.0    # angle between the two hip->ankle leg vectors (small == together)
 
     # convenience accessors resolving grounded/raised leg to concrete angle values
     @property

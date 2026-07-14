@@ -65,6 +65,9 @@ def _key_frame_to_json(
         "inter_leg_angle_deg": round(item.inter_leg_angle_deg, 2),
         "stride_separation_norm": item.stride_separation_norm,  # front leg farthest (higher == wider stride)
         "hind_foot_speed_norm": item.hind_foot_speed_norm,      # hind leg static (0 == planted)
+        "hind_foot_flat_deg": item.hind_foot_flat_deg,          # foot_passing: hind sole flatness (0 == grounded flat)
+        "front_foot_flat_deg": item.front_foot_flat_deg,        # foot_passing: front sole flatness (0 == parallel)
+        "inter_leg_split_deg": item.inter_leg_split_deg,        # foot_passing: leg split (small == feet together)
         "grounded_leg": item.grounded_leg,
         "raised_leg": item.raised_leg,
         "grounded_knee_angle_deg": round(item.grounded_knee_angle_deg, 2),
@@ -109,11 +112,16 @@ def _draw_annotations(frame: np.ndarray, metrics: SlowMarchFrameMetrics, frame_s
 
     gate = " [FOOT-GATE]" if frame_score.gated else ""
     label = (
-        f"score {frame_score.total:.1f}/10{gate} | stride {metrics.stride_separation_norm:.2f} "
-        f"hind-spd {metrics.hind_foot_speed_norm:.3f} | front {metrics.raised_leg} "
+        f"score {frame_score.total:.1f}/10{gate} | front {metrics.raised_leg} "
         f"foot {metrics.raised_foot_horizontal_deg:.0f}deg"
     )
     cv2.putText(rendered, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
+    # foot_passing diagnostics (0 == ideal): both soles flat + legs together.
+    passing = (
+        f"hind-flat {metrics.hind_foot_flat_deg:.0f}  front-flat {metrics.front_foot_flat_deg:.0f}  "
+        f"split {metrics.inter_leg_split_deg:.0f}deg"
+    )
+    cv2.putText(rendered, passing, (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 2, cv2.LINE_AA)
     return rendered
 
 
