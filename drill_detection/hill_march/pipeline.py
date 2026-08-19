@@ -31,6 +31,10 @@ def _iter_videos(input_path: Path) -> list[Path]:
 
 
 def _score_frame_from_metrics(item: HillMarchFrameMetrics, config: PipelineConfig) -> FrameScore:
+    # Parameter-1 full-marks threshold depends on the camera view (front 50 / side 70).
+    legs_apart_full_deg = (
+        config.legs_apart_full_deg_front if config.view == "front" else config.legs_apart_full_deg_side
+    )
     return score_frame(
         inter_leg_angle_deg=item.inter_leg_angle_deg,
         left_elbow_angle_deg=item.left_elbow_angle_deg,
@@ -42,6 +46,7 @@ def _score_frame_from_metrics(item: HillMarchFrameMetrics, config: PipelineConfi
         head_yaw_ratio=item.head_yaw_ratio,
         head_tilt_deg=item.head_tilt_deg,
         difficulty=config.difficulty,
+        legs_apart_full_deg=legs_apart_full_deg,
         target_arm_angle_deg=config.target_arm_angle_deg,
         target_knee_angle_deg=config.target_knee_angle_deg,
         target_head_tilt_deg=config.target_head_tilt_deg,

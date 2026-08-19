@@ -36,7 +36,11 @@ class PipelineConfig:
     #   2. arms        -> elbow ~180 (straight) AND small shoulder abduction (close to body).
     #   3. legs_straight -> both knees ~180.
     #   4. head_straight -> upright (small tilt) + facing front (small yaw).
-    target_legs_apart_deg: float = 70.0    # parameter 1 threshold (documented; band scales around it)
+    # Parameter 1 threshold is VIEW-DEPENDENT: the front-on camera foreshortens the
+    # forward/back stride, so a smaller separation earns full marks than from the side.
+    # Full marks (10) at/above this angle, ramping linearly down to 0 at 0 deg.
+    legs_apart_full_deg_front: float = 50.0   # front view: 50 deg => 10, ramp down
+    legs_apart_full_deg_side: float = 70.0    # side view:  70 deg => 10, ramp down
     target_arm_angle_deg: float = 180.0    # elbow straight
     target_arm_close_deg: float = 0.0      # shoulder abduction toward torso (0 == arm alongside body)
     target_knee_angle_deg: float = 180.0   # knee straight

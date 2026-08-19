@@ -53,9 +53,8 @@ def score_by_min(value: float, perfect_min: float, fail_min: float) -> float:
 # Each tuple = (perfect_at_easy, perfect_at_hard, fail_at_easy, fail_at_hard) fed into
 # scaled_tolerances(difficulty, ...).
 # --------------------------------------------------------------------------------------
-# Parameter 1 — legs apart. score_by_min band = (perfect_min easy/hard, fail_min easy/hard).
-# Easy requires a smaller minimum angle, hard a larger one; centred so difficulty 2 ~= 70 deg.
-LEGS_APART_BAND = (60.0, 80.0, 30.0, 50.0)   # inter-leg angle >= perfect_min => full marks
+# Parameter 1 — legs apart. VIEW-DEPENDENT threshold passed in from config
+# (front 50 deg, side 70 deg): full marks at/above it, linear ramp down to 0 at 0 deg.
 # Parameter 2a — arms straight: elbow error vs 180 deg (score_by_tolerance).
 ARM_STRAIGHT_BAND = (15.0, 5.0, 45.0, 20.0)
 # Parameter 2b — arms close to body: shoulder abduction toward torso (score_by_max, 0 == alongside).
@@ -105,15 +104,19 @@ def score_frame(
     head_yaw_ratio: float,
     head_tilt_deg: float,
     difficulty: float,
+    legs_apart_full_deg: float,
     target_arm_angle_deg: float = 180.0,
     target_knee_angle_deg: float = 180.0,
     target_head_tilt_deg: float = 0.0,
 ) -> FrameScore:
-    """Score one key frame /10 on the four hill-march parameters, then weight-average."""
+    """Score one key frame /10 on the four hill-march parameters, then weight-average.
 
-    # --- 1. Legs apart: inter-leg angle should be MORE than the target (~70 deg) ---
-    apart_perfect_min, apart_fail_min = scaled_tolerances(difficulty, *LEGS_APART_BAND)
-    legs_apart = score_by_min(inter_leg_angle_deg, apart_perfect_min, apart_fail_min)
+    legs_apart_full_deg is the view-dependent angle earning full marks for parameter 1
+    (front 50 deg, side 70 deg); the score ramps linearly down to 0 at 0 deg.
+    """
+
+    # --- 1. Legs apart: inter-leg angle >= the view's full-marks threshold ---
+    legs_apart = score_by_min(inter_leg_angle_deg, legs_apart_full_deg, 0.0)
 
     # --- 2. Arms straight AND close to body: mean of (elbow straightness, abduction) ---
     arm_perfect, arm_fail = scaled_tolerances(difficulty, *ARM_STRAIGHT_BAND)
