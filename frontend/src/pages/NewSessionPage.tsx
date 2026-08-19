@@ -21,6 +21,11 @@ function viewDescription(drillType: string, view: "Front" | "Side"): string {
       ? "Face-on: arms & legs straight + fist closed"
       : "Side-on: arms & legs straight + fist closed";
   }
+  if (drillType === "hill_march") {
+    return view === "Front"
+      ? "Face-on: legs apart ≥50° + arms/legs straight + head"
+      : "Side-on: legs apart ≥70° + arms/legs straight + head";
+  }
   return view === "Front" ? "Face-on camera angle" : "Side-on camera angle";
 }
 
