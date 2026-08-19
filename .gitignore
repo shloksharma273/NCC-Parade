@@ -24,3 +24,10 @@ backend/media
 backend/ml_output
 
 backend/reports
+
+# Large sample media + batch outputs (keep main clean, no large videos)
+test_data/Drill Samples/
+test_data/Drill Sample Results/
+
+# Local spec/reference docs (large binaries, not for main)
+*.pdf
