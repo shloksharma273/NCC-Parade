@@ -58,7 +58,7 @@ DRILL_FOLDER_TO_SLUG: dict[str, str | None] = {
     "tez march": None,
 }
 
-VIEW_AWARE = {"baju_swing", "slow_march"}
+VIEW_AWARE = {"baju_swing", "slow_march", "tez_chal"}
 
 
 def detect_view(parts: tuple[str, ...]) -> str | None:
@@ -103,7 +103,7 @@ def run_drill(slug: str, video: Path, out_dir: Path, view: str | None,
     if slug == "tez_chal":
         cfg = TezChalConfig(
             input_path=video, output_dir=out_dir, difficulty=difficulty,
-            save_annotated_frames=True, report_metadata=metadata,
+            view=view or "front", save_annotated_frames=True, report_metadata=metadata,
         )
         return run_tez_chal(cfg)
     raise ValueError(f"No detector for slug '{slug}'")

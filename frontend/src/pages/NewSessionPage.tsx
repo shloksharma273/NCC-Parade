@@ -9,6 +9,21 @@ import { useSessionState } from "../hooks/useSessionState";
 import { DRILL_OPTIONS } from "../utils/resultMapper";
 import type { SessionStatus } from "../types/session";
 
+// Short blurb under each Front/Side camera-view choice, per drill.
+function viewDescription(drillType: string, view: "Front" | "Side"): string {
+  if (drillType === "baju_swing") {
+    return view === "Front"
+      ? "Face-on: fist / thumb closure + arm spread"
+      : "Side-on: inter-arm swing angle";
+  }
+  if (drillType === "tez_chal") {
+    return view === "Front"
+      ? "Face-on: arms & legs straight + fist closed"
+      : "Side-on: arms & legs straight + fist closed";
+  }
+  return view === "Front" ? "Face-on camera angle" : "Side-on camera angle";
+}
+
 export function NewSessionPage() {
   const navigate = useNavigate();
   const { setCurrentSession, retakeContext, setRetakeContext } = useSessionState();
@@ -161,11 +176,7 @@ export function NewSessionPage() {
                       </span>
                     )}
                     <p className="font-command text-lg font-bold">{view} View</p>
-                    <p className="text-sm text-slate-600">
-                      {view === "Front"
-                        ? "Face-on: fist / thumb closure + arm spread"
-                        : "Side-on: inter-arm swing angle"}
-                    </p>
+                    <p className="text-sm text-slate-600">{viewDescription(drillType, view)}</p>
                   </button>
                 );
               })}

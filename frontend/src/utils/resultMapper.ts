@@ -30,15 +30,16 @@ export const STAGE_LABELS: Record<string, string> = {
 };
 
 // viewSelectable: the cadet can choose Front/Side at session creation (drill supports both
-// modes in the backend). baju_swing implements both (front = fist/thumb + arm spread,
-// side = inter-arm swing angle); others use a fixed view.
+// modes in the backend). baju_swing (front = fist/thumb + arm spread, side = inter-arm swing
+// angle) and tez_chal (arms/legs straight + fist closed, scored from either angle) support
+// both; others use a fixed view.
 export const DRILL_OPTIONS = [
   { value: "salute", label: "Salute", cameraView: "Front", backendSupported: true, viewSelectable: false },
   { value: "kadam_tal", label: "Kadam Tal", cameraView: "Side", backendSupported: true, viewSelectable: false },
   { value: "baju_swing", label: "Baju Swing", cameraView: "Front", backendSupported: true, viewSelectable: true },
   { value: "slow_march", label: "Slow March", cameraView: "Side", backendSupported: true, viewSelectable: false },
+  { value: "tez_chal", label: "Tez Chal", cameraView: "Front", backendSupported: true, viewSelectable: true },
   { value: "slow_march_track", label: "Slow March Track", cameraView: "Side", backendSupported: false, viewSelectable: false },
-  { value: "tez_march", label: "Tez March", cameraView: "Side", backendSupported: false, viewSelectable: false },
   { value: "hill_march", label: "Hill March", cameraView: "Side", backendSupported: false, viewSelectable: false },
 ] as const;
 
