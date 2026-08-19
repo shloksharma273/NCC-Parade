@@ -12,8 +12,8 @@ clean and untouched:
     <output>/<drill name>/<view>/<video stem>/results.json, key frames, report.pdf
 
 Only drills that have a detector are processed (salute, kadam_tal, baju_swing,
-slow_march). Unsupported sample folders (hill march, dst drill, tez chal) are
-listed and skipped. View-aware drills (baju_swing, slow_march) use the view taken
+slow_march, tez_chal). Unsupported sample folders (hill march, dst drill,
+tez march) are listed and skipped. View-aware drills (baju_swing, slow_march) use the view taken
 from the folder name; other drills ignore it.
 
 Usage:
@@ -40,6 +40,8 @@ from drill_detection.baju_swing.config import PipelineConfig as BajuSwingConfig
 from drill_detection.baju_swing.pipeline import run_pipeline as run_baju_swing
 from drill_detection.slow_march.config import PipelineConfig as SlowMarchConfig
 from drill_detection.slow_march.pipeline import run_pipeline as run_slow_march
+from drill_detection.tez_chal.config import PipelineConfig as TezChalConfig
+from drill_detection.tez_chal.pipeline import run_pipeline as run_tez_chal
 
 VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".m4v"}
 
@@ -50,9 +52,9 @@ DRILL_FOLDER_TO_SLUG: dict[str, str | None] = {
     "kadam tal": "kadam_tal",
     "salute": "salute",
     "slow march": "slow_march",
+    "tez chal": "tez_chal",
     "hill march": None,
     "dst drill": None,
-    "tez chal": None,
     "tez march": None,
 }
 
@@ -98,6 +100,12 @@ def run_drill(slug: str, video: Path, out_dir: Path, view: str | None,
             view=view or "side", save_annotated_frames=True, report_metadata=metadata,
         )
         return run_slow_march(cfg)
+    if slug == "tez_chal":
+        cfg = TezChalConfig(
+            input_path=video, output_dir=out_dir, difficulty=difficulty,
+            save_annotated_frames=True, report_metadata=metadata,
+        )
+        return run_tez_chal(cfg)
     raise ValueError(f"No detector for slug '{slug}'")
 
 

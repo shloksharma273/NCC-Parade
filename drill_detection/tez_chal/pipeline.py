@@ -15,9 +15,12 @@ from mediapipe.tasks.python.vision import (
 )
 
 from .config import PipelineConfig
+from .hand_analysis import analyze_hands_for_frames
 from .key_frame_detection import find_step_peaks
 from .landmarks import TezChalFrameMetrics, compute_frame_metrics
 from .mediapipe_models import ensure_models
+from .report import generate_pdf_report
+from .scoring import FrameScore, score_frame
 
 SUPPORTED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv"}
 
@@ -28,7 +31,15 @@ def _iter_videos(input_path: Path) -> list[Path]:
     return [p for p in sorted(input_path.iterdir()) if p.suffix.lower() in SUPPORTED_EXTENSIONS]
 
 
-def _key_frame_to_json(rank: int, video_name: str, item: TezChalFrameMetrics, image_rel_path: str) -> dict:
+def _key_frame_to_json(
+    rank: int,
+    video_name: str,
+    item: TezChalFrameMetrics,
+    frame_score: FrameScore,
+    image_rel_path: str,
+    fist_samples_with_hands: int,
+    fist_samples_total: int,
+) -> dict:
     return {
         "rank": rank,
         "video_name": video_name,
@@ -37,11 +48,16 @@ def _key_frame_to_json(rank: int, video_name: str, item: TezChalFrameMetrics, im
         "inter_leg_angle_deg": round(item.inter_leg_angle_deg, 2),  # legs maximally split at the key frame
         "left_elbow_angle_deg": round(item.left_elbow_angle_deg, 2),
         "right_elbow_angle_deg": round(item.right_elbow_angle_deg, 2),
+        "left_knee_angle_deg": round(item.left_knee_angle_deg, 2),
+        "right_knee_angle_deg": round(item.right_knee_angle_deg, 2),
+        "fist_samples_with_hands": fist_samples_with_hands,  # frames near the key frame that had a detectable hand
+        "fist_samples_total": fist_samples_total,
+        "score": frame_score.to_dict(),
         "output_image_path": image_rel_path,
     }
 
 
-def _draw_annotations(frame: np.ndarray, metrics: TezChalFrameMetrics) -> np.ndarray:
+def _draw_annotations(frame: np.ndarray, metrics: TezChalFrameMetrics, frame_score: FrameScore) -> np.ndarray:
     rendered = frame.copy()
 
     def draw_leg(hip, knee, ankle, foot, color, label) -> None:
@@ -67,8 +83,13 @@ def _draw_annotations(frame: np.ndarray, metrics: TezChalFrameMetrics) -> np.nda
     draw_arm(metrics.right_shoulder_px, metrics.right_elbow_px, metrics.right_wrist_px, (200, 200, 0))
     cv2.circle(rendered, (int(metrics.nose_px[0]), int(metrics.nose_px[1])), 4, (0, 255, 255), -1)
 
-    label = f"inter-leg {metrics.inter_leg_angle_deg:.0f}deg  f#{metrics.frame_index}"
+    label = f"score {frame_score.total:.1f}/10  f#{metrics.frame_index}"
     cv2.putText(rendered, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
+    breakdown = (
+        f"arms {frame_score.arms_straight:.0f}  legs {frame_score.legs_straight:.0f}  "
+        f"fist {frame_score.fist_closed:.0f}"
+    )
+    cv2.putText(rendered, breakdown, (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 2, cv2.LINE_AA)
     return rendered
 
 
@@ -171,16 +192,44 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
     # Key frames = quick-march step extremes: inter-leg angle at a local maximum.
     key_frames_metrics = find_step_peaks(metrics, config)
 
+    # Pass 2: re-run Holistic in IMAGE mode on the key frames only, for reliable hand
+    # landmarks -> the fist-closed score (the first pass runs in VIDEO mode, where hands
+    # are unreliable). Mirrors baju_swing / salute.
+    hand_scores = analyze_hands_for_frames(
+        video_path,
+        [m.frame_index for m in key_frames_metrics],
+        min_confidence=config.hand_min_confidence,
+        difficulty=config.difficulty,
+        snap_window=config.hand_snap_window,
+        snap_step=config.hand_snap_step,
+        frame_count=frame_index,  # total frames read (upper bound for clamping the snap window)
+    )
+
     key_frames: list[dict] = []
+    frame_scores: list[float] = []
     montage_images: list[np.ndarray] = []
     montage_labels: list[str] = []
 
     for rank, item in enumerate(key_frames_metrics, start=1):
+        hand = hand_scores.get(item.frame_index)
+        frame_score = score_frame(
+            left_elbow_angle_deg=item.left_elbow_angle_deg,
+            right_elbow_angle_deg=item.right_elbow_angle_deg,
+            left_knee_angle_deg=item.left_knee_angle_deg,
+            right_knee_angle_deg=item.right_knee_angle_deg,
+            fist_closed_score=hand.fist_score if hand else 0.0,
+            hands_detected=hand.hands_detected if hand else 0,
+            difficulty=config.difficulty,
+            target_arm_angle_deg=config.target_arm_angle_deg,
+            target_knee_angle_deg=config.target_knee_angle_deg,
+        )
+        frame_scores.append(frame_score.total)
+
         image_rel_path = ""
         frame_bgr = _load_frame(video_path, item.frame_index)
         if frame_bgr is not None:
             file_base = f"step_{rank:02d}_frame_{item.frame_index:06d}"
-            annotated = _draw_annotations(frame_bgr, item)
+            annotated = _draw_annotations(frame_bgr, item, frame_score)
             if config.save_annotated_frames:
                 annotated_path = annotated_dir / f"{file_base}.jpg"
                 cv2.imwrite(str(annotated_path), annotated)
@@ -188,9 +237,13 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
             if config.save_raw_frames:
                 cv2.imwrite(str(raw_dir / f"{file_base}.jpg"), frame_bgr)
             montage_images.append(annotated)
-            montage_labels.append(f"#{rank} f{item.frame_index} {item.inter_leg_angle_deg:.0f}deg")
+            montage_labels.append(f"#{rank} f{item.frame_index} {frame_score.total:.1f}/10")
 
-        key_frames.append(_key_frame_to_json(rank, video_path.name, item, image_rel_path))
+        key_frames.append(_key_frame_to_json(
+            rank, video_path.name, item, frame_score, image_rel_path,
+            fist_samples_with_hands=hand.samples_with_hands if hand else 0,
+            fist_samples_total=hand.samples_total if hand else 0,
+        ))
 
     montage_rel = ""
     if config.save_montage and montage_images:
@@ -201,6 +254,9 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
             montage_rel = str(montage_path.relative_to(config.output_dir))
 
     iteration_count = len(key_frames)
+    total_score = round(sum(frame_scores), 2)
+    average_score = round(total_score / iteration_count, 2) if iteration_count else 0.0
+
     result_payload = {
         "video_name": video_path.name,
         "drill_type": "tez_chal",
@@ -210,16 +266,25 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         "report_metadata": config.report_metadata.to_dict() if config.report_metadata else None,
         "summary": {
             "iteration_count": iteration_count,
+            "total_score": total_score,
+            "max_possible_score": iteration_count * 10,
+            "average_score_per_step": average_score,
             "montage_image": montage_rel,
         },
-        # NOTE: key frames only for now. Per-parameter scoring + PDF report is the next
-        # step (HOOK) once the key-frame definition is confirmed on real footage.
-        "peak_frames": key_frames,
+        "peak_frames": key_frames,  # key name "peak_frames" reused for report compatibility
     }
 
     result_json_path = output_root / "results.json"
     with result_json_path.open("w", encoding="utf-8") as f:
         json.dump(result_payload, f, indent=2)
+
+    report_pdf_path = output_root / "tez_chal_report.pdf"
+    generate_pdf_report(
+        results_path=result_json_path,
+        output_path=report_pdf_path,
+        output_dir=config.output_dir,
+        metadata=config.report_metadata,
+    )
 
     return {
         "video": str(video_path),
@@ -227,9 +292,12 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         "valid_scored_frames": valid_frames,
         "iteration_count": iteration_count,
         "peak_count": iteration_count,
+        "total_score": total_score,
+        "average_score": average_score,
         "difficulty": config.difficulty,
         "view": config.view,
         "results_json": str(result_json_path),
+        "report_pdf": str(report_pdf_path),
         "montage_image": str(output_root / "key_frames_montage.jpg") if montage_rel else "",
     }
 

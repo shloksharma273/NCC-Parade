@@ -32,7 +32,25 @@ class PipelineConfig:
     #                  at the top of a fast knee-lift. Selectable for A/B.
     inter_leg_vector: str = "hip_ankle"
 
-    # --- Difficulty knob 0..5 (reserved for the scoring follow-up) ---------------------
+    # --- Scoring (see scoring.py). Three parameters, each ideal held ALWAYS; the
+    #     score falls off proportionally as the pose deviates from the ideal:
+    #       1. arms_straight  -> both elbows ~180 deg
+    #       2. legs_straight  -> both knees  ~180 deg
+    #       3. fist_closed    -> fingers curled toward the wrist (hand landmarks)
+    # Bands live in scoring.py; targets/weights are here (single source of truth).
+    target_arm_angle_deg: float = 180.0    # elbow straight
+    target_knee_angle_deg: float = 180.0   # knee straight
+    hand_min_confidence: float = 0.3       # confidence for the IMAGE-mode hand pass
+    # Fist-closed snap window: at the step extreme the arms swing fastest, so the hands
+    # are motion-blurred and often undetectable ON the key frame itself. Because the fist
+    # must be closed ALWAYS, we evaluate it on the SHARPEST nearby frames instead: sample
+    # frames within +/- hand_snap_window (every hand_snap_step frames) and average the fist
+    # score over those where a hand is actually detected. Set hand_snap_window=0 to score
+    # strictly on the key frame.
+    hand_snap_window: int = 8
+    hand_snap_step: int = 2
+
+    # --- Difficulty knob 0..5 ----------------------------------------------------------
     difficulty: float = 2.0
 
     # --- Camera view: quick march is filmed front-on in the samples --------------------

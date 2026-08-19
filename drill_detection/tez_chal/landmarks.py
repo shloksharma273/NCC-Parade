@@ -34,8 +34,11 @@ class TezChalFrameMetrics:
     # KEY SIGNAL: angle between the two legs. Peaks (local maxima) mark the step extremes.
     inter_leg_angle_deg: float
 
+    # Scored parameters (see scoring.py): elbows/knees ~180 == straight.
     left_elbow_angle_deg: float
     right_elbow_angle_deg: float
+    left_knee_angle_deg: float
+    right_knee_angle_deg: float
 
     # pixel coords for annotation
     left_hip_px: tuple[float, float]
@@ -113,6 +116,9 @@ def compute_frame_metrics(
 
     left_elbow_angle = angle_at_joint(left_shoulder_px, left_elbow_px, left_wrist_px)
     right_elbow_angle = angle_at_joint(right_shoulder_px, right_elbow_px, right_wrist_px)
+    # Knee interior angle (hip-knee-ankle); 180 == leg straight.
+    left_knee_angle = angle_at_joint(left_hip_px, left_knee_px, left_ankle_px)
+    right_knee_angle = angle_at_joint(right_hip_px, right_knee_px, right_ankle_px)
 
     return TezChalFrameMetrics(
         frame_index=frame_index,
@@ -120,6 +126,8 @@ def compute_frame_metrics(
         inter_leg_angle_deg=inter_leg_angle,
         left_elbow_angle_deg=left_elbow_angle,
         right_elbow_angle_deg=right_elbow_angle,
+        left_knee_angle_deg=left_knee_angle,
+        right_knee_angle_deg=right_knee_angle,
         left_hip_px=left_hip_px,
         left_knee_px=left_knee_px,
         left_ankle_px=left_ankle_px,
