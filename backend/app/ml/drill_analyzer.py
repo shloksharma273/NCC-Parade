@@ -57,6 +57,9 @@ class DrillAnalyzer:
             return self._analyze_baju_swing(video_path, session_id, progress_callback, view)
         if drill_type == "slow_march":
             return self._analyze_slow_march(video_path, session_id, progress_callback)
+        if drill_type == "hill_march":
+            # view ("front" | "side") sets the legs-apart threshold (front 50 / side 70).
+            return self._analyze_hill_march(video_path, session_id, progress_callback, view)
         raise ValueError(f"Drill type '{drill_type}' is not implemented yet.")
 
     def _session_metadata(self, session_id: str) -> ReportMetadata:
@@ -276,6 +279,86 @@ class DrillAnalyzer:
             "result": self._result_label(avg_score * 10),
             "summary": self._build_slow_march_summary(key_frames, avg_score, iteration_count),
             "parameters": self._build_slow_march_parameters(key_frames),
+            "annotated_video_path": None,
+            "key_frame_path": key_frame_path,
+            "ml_results_path": str(results_path),
+            "report_pdf_path": summary.get("report_pdf"),
+            "peak_frames": key_frames,
+            "ml_summary": ml_summary,
+        }
+
+    def _hill_march_metadata(self, session_id: str) -> ReportMetadata:
+        # Defensive metadata fetch so the analyzer is usable WITHOUT a DB session
+        # (mirrors slow_march). Try the real session; on any miss fall back to a placeholder.
+        try:
+            from ..services.session_service import session_service
+
+            session = session_service.get_session(session_id)
+            if session:
+                return ReportMetadata.from_session(session)
+        except Exception:
+            pass
+        return ReportMetadata(
+            session_id=session_id,
+            drill_type="hill_march",
+            cadet_name="Test Cadet",
+        )
+
+    def _analyze_hill_march(
+        self,
+        video_path: str,
+        session_id: str,
+        progress_callback: ProgressCallback | None,
+        view: str = "front",
+    ) -> dict:
+        from drill_detection.hill_march.config import PipelineConfig as HillMarchConfig
+        from drill_detection.hill_march.pipeline import process_video as process_hill_march_video
+
+        def emit(stage: ProcessingStage, progress: int, message: str) -> None:
+            if progress_callback:
+                progress_callback(stage, progress, message)
+
+        emit(ProcessingStage.VIDEO_SAVED, 10, "Video saved successfully.")
+        emit(ProcessingStage.POSE_EXTRACTION, 25, "Extracting pose landmarks.")
+
+        output_dir = settings.ml_output_dir / session_id
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        config = HillMarchConfig(
+            input_path=Path(video_path),
+            output_dir=output_dir,
+            view=(view or "front").strip().lower(),
+            difficulty=settings.ml_difficulty,
+            save_annotated_frames=True,
+            report_metadata=self._hill_march_metadata(session_id),
+        )
+
+        emit(ProcessingStage.POSE_EXTRACTION, 40, "Detecting hill-march step extremes (max leg separation).")
+        summary = process_hill_march_video(Path(video_path), config)
+
+        emit(ProcessingStage.PARAMETER_CALCULATION, 65, "Scoring legs apart, arms, legs straight, and head.")
+        emit(ProcessingStage.GROUND_TRUTH_COMPARISON, 80, "Comparing each key frame against ideal drill form.")
+        emit(ProcessingStage.REPORT_GENERATION, 95, "Generating hill march report.")
+
+        results_path = Path(summary["results_json"])
+        with results_path.open(encoding="utf-8") as f:
+            ml_results = json.load(f)
+
+        key_frames = ml_results.get("peak_frames", [])
+        ml_summary = ml_results.get("summary", {})
+        avg_score = ml_summary.get("average_score_per_step", 0.0)
+        iteration_count = ml_summary.get("iteration_count", 0)
+        key_frame_path = self._resolve_key_frame(output_dir, key_frames)
+
+        emit(ProcessingStage.COMPLETED, 100, "Analysis completed.")
+
+        return {
+            "score": int(round(avg_score * 10)),
+            "average_score_per_step": avg_score,
+            "iteration_count": iteration_count,
+            "result": self._result_label(avg_score * 10),
+            "summary": self._build_hill_march_summary(key_frames, avg_score, iteration_count),
+            "parameters": self._build_hill_march_parameters(key_frames),
             "annotated_video_path": None,
             "key_frame_path": key_frame_path,
             "ml_results_path": str(results_path),
@@ -527,6 +610,50 @@ class DrillAnalyzer:
         parameters = []
         for name, key, expected, feedback in keys:
             values = [frame["score"][key] for frame in key_frames]
+            avg = sum(values) / len(values)
+            status = "pass" if avg >= 7 else "needs_correction" if avg >= 5 else "fail"
+            parameters.append(
+                {
+                    "name": name,
+                    "expected": expected,
+                    "actual": f"{avg:.2f}/10 average",
+                    "score": round(avg / 10, 2),
+                    "status": status,
+                    "feedback": feedback if avg < 7 else "Good form on this parameter.",
+                }
+            )
+        return parameters
+
+    @staticmethod
+    def _build_hill_march_summary(key_frames: list[dict], avg_score: float, iteration_count: int) -> list[str]:
+        if iteration_count == 0:
+            return ["No hill-march steps were detected in the recording."]
+
+        summaries = [f"Detected {iteration_count} hill-march steps with average score {avg_score:.2f}/10."]
+        if key_frames:
+            best = max(key_frames, key=lambda f: f["score"]["total"])
+            worst = min(key_frames, key=lambda f: f["score"]["total"])
+            summaries.append(f"Best step: #{best['rank']} scored {best['score']['total']:.2f}/10.")
+            summaries.append(f"Weakest step: #{worst['rank']} scored {worst['score']['total']:.2f}/10.")
+        return summaries
+
+    @staticmethod
+    def _build_hill_march_parameters(key_frames: list[dict]) -> list[dict]:
+        if not key_frames:
+            return []
+
+        keys = [
+            ("Legs Apart", "legs_apart", "wide leg separation", "Drive the legs further apart at the step extreme."),
+            ("Arms Straight & Close", "arms", "straight & close to body", "Keep the arms straight and held close to the body."),
+            ("Legs Straight", "legs_straight", "180° (straight knees)", "Keep both legs straight."),
+            ("Head Straight", "head_straight", "upright, facing front", "Keep the head upright and look straight ahead."),
+        ]
+
+        parameters = []
+        for name, key, expected, feedback in keys:
+            values = [frame["score"][key] for frame in key_frames if key in frame["score"]]
+            if not values:
+                continue
             avg = sum(values) / len(values)
             status = "pass" if avg >= 7 else "needs_correction" if avg >= 5 else "fail"
             parameters.append(

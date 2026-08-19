@@ -32,6 +32,7 @@ DRILL_TYPE_LABELS = {
     "salute": "Salute",
     "baju_swing": "Baju Swing",
     "slow_march": "Slow March",
+    "hill_march": "Hill March",
 }
 
 
