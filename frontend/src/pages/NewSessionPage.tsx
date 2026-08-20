@@ -1,8 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSession, getSession } from "../api/sessionApi";
 import { parseApiError } from "../api/client";
+import {
+  listCameraDevices,
+  startDevicePreview,
+  stopDevicePreview,
+  getDeviceStreamUrl,
+  type CameraDevice,
+} from "../api/cameraApi";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { CameraPreview } from "../components/CameraPreview";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { PageLayout } from "../components/PageLayout";
 import { useSessionState } from "../hooks/useSessionState";
@@ -45,11 +53,62 @@ export function NewSessionPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // --- Camera picker (live thumbnails instead of typing an index) ---
+  const [devices, setDevices] = useState<CameraDevice[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(true);
+  const [previewActive, setPreviewActive] = useState(false);
+  const [streamKey, setStreamKey] = useState(0);
+  // Keep the preview (and thus the warm camera) alive when navigating forward to readiness.
+  const keepPreviewOnExit = useRef(false);
+
   const selectedDrill = DRILL_OPTIONS.find((d) => d.value === drillType);
 
   useEffect(() => {
     if (retakeContext) setRetakeContext(null);
   }, [retakeContext, setRetakeContext]);
+
+  // Start a live preview of the given camera (session-less device preview).
+  const previewCamera = async (id: string) => {
+    try {
+      await startDevicePreview(id);
+      setPreviewActive(true);
+      setStreamKey((k) => k + 1);
+    } catch {
+      setPreviewActive(false);
+    }
+  };
+
+  // Load the available cameras once, pick a sensible default, and preview it.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { devices: found } = await listCameraDevices();
+        if (cancelled) return;
+        setDevices(found);
+        const available = found.filter((d) => d.available);
+        const stillValid = available.some((d) => String(d.index) === cameraId);
+        const initial = stillValid ? cameraId : available.length ? String(available[0].index) : cameraId;
+        if (initial !== cameraId) setCameraId(initial);
+        if (available.length) void previewCamera(initial);
+      } catch {
+        if (!cancelled) setDevices([]);
+      } finally {
+        if (!cancelled) setDevicesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      // Release the camera on leave UNLESS we're proceeding to readiness (keep it warm).
+      if (!keepPreviewOnExit.current) void stopDevicePreview();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectCamera = (id: string) => {
+    setCameraId(id);
+    void previewCamera(id);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +143,7 @@ export function NewSessionPage() {
         camera_id: session.camera_id,
         status: session.status as SessionStatus,
       });
+      keepPreviewOnExit.current = true; // keep the camera warm through to readiness
       navigate(`/sessions/${created.session_id}/readiness`);
     } catch (err) {
       setError(parseApiError(err));
@@ -189,10 +249,89 @@ export function NewSessionPage() {
           </div>
         )}
 
-        <label className="block">
-          <span className="mb-2 block font-semibold">Camera ID</span>
-          <input value={cameraId} onChange={(e) => setCameraId(e.target.value)} className="w-full rounded-xl border-2 border-[var(--color-khaki)] px-4 py-4 text-lg" />
-        </label>
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-command text-xl font-bold">Select Camera</p>
+            <button
+              type="button"
+              onClick={async () => {
+                setDevicesLoading(true);
+                try {
+                  const { devices: found } = await listCameraDevices(true);
+                  setDevices(found);
+                } finally {
+                  setDevicesLoading(false);
+                }
+              }}
+              className="text-sm font-semibold text-[var(--color-army-green)] underline"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {devicesLoading && devices.length === 0 ? (
+            <p className="text-sm text-slate-500">Detecting cameras…</p>
+          ) : devices.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {devices.map((device) => {
+                const id = String(device.index);
+                const selected = cameraId === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    disabled={!device.available}
+                    onClick={() => device.available && selectCamera(id)}
+                    className={`relative overflow-hidden rounded-xl border-2 text-left transition-all ${
+                      !device.available
+                        ? "cursor-not-allowed border-slate-200 opacity-50"
+                        : selected
+                          ? "border-4 border-[var(--color-army-green)] ring-2 ring-[var(--color-army-green)] ring-offset-2"
+                          : "border-[var(--color-khaki)] hover:border-[var(--color-army-green)]"
+                    }`}
+                  >
+                    <div className="aspect-video bg-black">
+                      {device.thumbnail ? (
+                        <img src={device.thumbnail} alt={device.label} className="h-full w-full object-contain" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-slate-400">No preview</div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="font-semibold">{device.label}</span>
+                      {selected && (
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-army-green)] text-xs font-bold text-white">✓</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-[var(--color-fail)]">
+                No cameras detected. Enter a camera index manually, or press Refresh.
+              </p>
+              <input
+                value={cameraId}
+                onChange={(e) => setCameraId(e.target.value)}
+                placeholder="0"
+                className="w-full rounded-xl border-2 border-[var(--color-khaki)] px-4 py-4 text-lg"
+              />
+            </div>
+          )}
+
+          {devices.some((d) => d.available) && (
+            <div className="mt-3">
+              <CameraPreview
+                streamUrlOverride={getDeviceStreamUrl()}
+                active={previewActive}
+                streamKey={streamKey}
+                label="Selected Camera — Live"
+              />
+            </div>
+          )}
+        </div>
 
         <PrimaryButton type="submit" disabled={loading}>
           {loading ? "Creating..." : "Continue to Readiness Check"}

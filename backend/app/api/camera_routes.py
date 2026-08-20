@@ -16,6 +16,61 @@ def _parse_usb_index(camera_id: str) -> int | None:
     return int(camera_id) if camera_id.isdigit() else None
 
 
+# ---------------------------------------------------------------------------
+# Session-less DEVICE preview — used by the camera picker on the New Session
+# page to show a live feed of the selected camera BEFORE a session exists.
+# Reuses the same single-capture MJPEG machinery as the session preview.
+# ---------------------------------------------------------------------------
+@router.post("/camera/preview/start", response_model=ActionResponse)
+async def start_device_preview(camera_id: int | None = None) -> ActionResponse:
+    if camera_service.active_session_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error": "RECORDING_ALREADY_ACTIVE", "message": "Camera is in use by an active recording."},
+        )
+
+    connection = camera_service.check_camera_connection(usb_index=camera_id)
+    if not connection["camera_connected"]:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": connection.get("error", "CAMERA_NOT_FOUND"),
+                "message": connection.get("message", "Camera is not available."),
+            },
+        )
+
+    try:
+        await preview_service.start(camera_id)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error": str(exc).split(":")[0], "message": "Could not start camera preview."},
+        ) from exc
+
+    return ActionResponse(session_id="", status="preview", message="Device preview started.")
+
+
+@router.post("/camera/preview/stop", response_model=ActionResponse)
+async def stop_device_preview() -> ActionResponse:
+    if camera_service.active_session_id:
+        return ActionResponse(session_id="", status="recording", message="Preview left running for active recording.")
+    await preview_service.stop()
+    return ActionResponse(session_id="", status="ready", message="Device preview stopped.")
+
+
+@router.get("/camera/stream")
+async def device_stream() -> StreamingResponse:
+    if not camera_service.stream_available:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "STREAM_NOT_AVAILABLE", "message": "Camera preview is not active."},
+        )
+    return StreamingResponse(
+        camera_service.iter_mjpeg(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
 @router.post("/sessions/{session_id}/camera/preview/start", response_model=ActionResponse)
 async def start_camera_preview(session_id: str) -> ActionResponse:
     session = session_service.get_session(session_id)

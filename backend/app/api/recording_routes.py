@@ -56,7 +56,9 @@ async def start_recording(session_id: str) -> ActionResponse:
         session_service.transition(session_id, SessionStatus.READY)
 
     try:
-        await preview_service.stop()
+        # Stop the preview capture LOOP but keep the camera handle open, so start_recording can
+        # reuse the already-warm capture instead of releasing + reopening (slow on old hardware).
+        await preview_service.stop_loop()
         await recording_service.start(session_id, camera_id)
     except RuntimeError as exc:
         raw = str(exc)

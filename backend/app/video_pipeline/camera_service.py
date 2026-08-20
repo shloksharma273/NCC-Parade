@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import os
 import platform
 import threading
@@ -25,6 +26,11 @@ if settings.is_ip_camera():
 
 class CameraService:
     MAX_FRAME_READ_FAILURES = settings.max_frame_read_failures
+    # How many USB indices to probe when enumerating cameras (0 .. N-1).
+    DEFAULT_PROBE_INDICES = 5
+    # Serve the cached device list for this long before re-probing (probing opens each
+    # camera, which is slow on old hardware — the warm-up call fills this cache).
+    DEVICE_CACHE_TTL_SEC = 30.0
 
     def __init__(self) -> None:
         self._capture: cv2.VideoCapture | None = None
@@ -39,6 +45,8 @@ class CameraService:
         self._usb_index: int | None = None
         self._last_error: str | None = None
         self._lock = threading.Lock()
+        self._devices_cache: list[dict] | None = None
+        self._devices_cache_at: float = 0.0
 
     def get_camera_source(self, stream_type: StreamType = "main", usb_index: int | None = None) -> str | int:
         return settings.get_camera_source(stream_type, usb_index=usb_index)
@@ -244,15 +252,27 @@ class CameraService:
         usb_index = camera_id if camera_id is not None else settings.camera_id
 
         with self._lock:
-            if self._capture is not None:
-                self._capture.release()
-                self._capture = None
+            # Slow-start fix: if the warm preview already has the correct MAIN capture open
+            # (USB, same index), REUSE it instead of releasing + reopening — the reopen is the
+            # main source of the lag when the user hits Record on old hardware. IP mode previews
+            # on the sub-stream but records on main, so it always reopens.
+            reuse = (
+                self._capture is not None
+                and not settings.is_ip_camera()
+                and self._open_stream_type == "main"
+                and self._usb_index == usb_index
+            )
+            if not reuse:
+                if self._capture is not None:
+                    self._capture.release()
+                    self._capture = None
             self._preview_active = False
             self._latest_jpeg = None
             self._consecutive_read_failures = 0
             self._last_error = None
 
-            self._capture = self._open_capture("main", usb_index=usb_index)
+            if not reuse:
+                self._capture = self._open_capture("main", usb_index=usb_index)
 
             width = int(self._capture.get(cv2.CAP_PROP_FRAME_WIDTH)) or settings.camera_width
             height = int(self._capture.get(cv2.CAP_PROP_FRAME_HEIGHT)) or settings.camera_height
@@ -334,6 +354,104 @@ class CameraService:
         finally:
             if cap is not None:
                 cap.release()
+
+    # ------------------------------------------------------------------
+    # Device enumeration + warm-up (camera picker / slow-start mitigation)
+    # ------------------------------------------------------------------
+    def _encode_thumbnail(self, frame, width: int = 240) -> str | None:
+        """Downscale + JPEG-encode a frame to a small base64 data URI for the picker grid."""
+        h, w = frame.shape[:2]
+        if w > width:
+            frame = cv2.resize(frame, (width, max(1, int(h * width / w))))
+        ok, encoded = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+        if not ok:
+            return None
+        return "data:image/jpeg;base64," + base64.b64encode(encoded.tobytes()).decode("ascii")
+
+    def _enumerate_usb_devices(self, max_index: int) -> list[dict]:
+        devices: list[dict] = []
+        for index in range(max_index):
+            cap = None
+            try:
+                cap = cv2.VideoCapture(index, _USB_BACKEND)
+                if not cap.isOpened():
+                    continue
+                ok, frame = self._read_with_retries(cap, attempts=3)
+                if not ok or frame is None:
+                    continue
+                devices.append({
+                    "index": index,
+                    "label": f"Camera {index}",
+                    "available": True,
+                    "thumbnail": self._encode_thumbnail(frame),
+                })
+            except Exception:
+                continue
+            finally:
+                if cap is not None:
+                    cap.release()
+        return devices
+
+    def _enumerate_ip_devices(self) -> list[dict]:
+        # IP mode: the "devices" are the configured RTSP streams (main / sub). The session's
+        # camera_id index is ignored in IP mode (source comes from config), so these entries
+        # are informational selectors. Hardware arrives later; this keeps the picker IP-ready.
+        devices: list[dict] = []
+        for stream in ("main", "sub"):
+            url = settings.rtsp_main_url() if stream == "main" else settings.rtsp_sub_url()
+            if not url:
+                continue
+            cap = None
+            thumbnail = None
+            available = False
+            try:
+                cap = self._open_capture(stream)  # type: ignore[arg-type]
+                ok, frame = self._read_with_retries(cap, attempts=3)
+                if ok and frame is not None:
+                    available = True
+                    thumbnail = self._encode_thumbnail(frame)
+            except RuntimeError:
+                available = False
+            finally:
+                if cap is not None:
+                    cap.release()
+            devices.append({
+                "index": stream,
+                "label": f"IP camera ({stream} stream)",
+                "available": available,
+                "thumbnail": thumbnail,
+            })
+        return devices
+
+    def enumerate_devices(self, max_index: int | None = None, force: bool = False) -> list[dict]:
+        """List selectable cameras with a still thumbnail for each. Cached (see TTL) because
+        probing opens each device, which is slow on old hardware."""
+        now = time.time()
+        if not force and self._devices_cache is not None and (now - self._devices_cache_at) < self.DEVICE_CACHE_TTL_SEC:
+            return self._devices_cache
+        # Don't probe while a preview/recording holds the single capture — return cache instead
+        # (probing would open a second handle on the same device and can fail on Windows).
+        if self.stream_available and self._devices_cache is not None:
+            return self._devices_cache
+
+        if settings.is_ip_camera():
+            devices = self._enumerate_ip_devices()
+        else:
+            probe = max_index if max_index is not None else self.DEFAULT_PROBE_INDICES
+            devices = self._enumerate_usb_devices(probe)
+
+        self._devices_cache = devices
+        self._devices_cache_at = now
+        return devices
+
+    def warm_up(self) -> dict:
+        """Prime the camera subsystem early (driver init is slow on old hardware). Enumerating
+        devices opens each one once, which is exactly the cold-start cost we want to pay up
+        front — on the very first page — rather than when the user hits Record."""
+        if self.stream_available:
+            return {"warmed": False, "reason": "stream_active", "devices": self._devices_cache or []}
+        devices = self.enumerate_devices(force=True)
+        return {"warmed": True, "devices": devices}
 
     def iter_mjpeg(self):
         boundary = b"frame"

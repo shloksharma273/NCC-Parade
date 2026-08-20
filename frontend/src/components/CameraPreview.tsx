@@ -1,7 +1,10 @@
 import { getCameraStreamUrl } from "../api/cameraApi";
 
 type CameraPreviewProps = {
-  sessionId: string;
+  /** Session-scoped stream. Ignored when `streamUrlOverride` is given. */
+  sessionId?: string;
+  /** Explicit MJPEG URL (e.g. the session-less device preview /camera/stream). */
+  streamUrlOverride?: string | null;
   active: boolean;
   label?: string;
   showAlignmentGuide?: boolean;
@@ -11,12 +14,15 @@ type CameraPreviewProps = {
 
 export function CameraPreview({
   sessionId,
+  streamUrlOverride,
   active,
   label = "Live Camera",
   showAlignmentGuide = false,
   streamKey = 0,
 }: CameraPreviewProps) {
-  const baseUrl = active ? getCameraStreamUrl(sessionId) : null;
+  const baseUrl = active
+    ? (streamUrlOverride ?? (sessionId ? getCameraStreamUrl(sessionId) : null))
+    : null;
   const streamUrl = baseUrl ? `${baseUrl}?v=${streamKey}` : null;
 
   return (

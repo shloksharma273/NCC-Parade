@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useBackendStatus } from "../hooks/useBackendStatus";
 import { listSessions } from "../api/sessionApi";
+import { warmUpCamera } from "../api/cameraApi";
 import { useState, useCallback } from "react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ErrorBanner } from "../components/ErrorBanner";
@@ -39,8 +40,14 @@ export function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!getBackendUrl()) navigate("/connect", { replace: true });
-    else loadRecent();
+    if (!getBackendUrl()) {
+      navigate("/connect", { replace: true });
+      return;
+    }
+    loadRecent();
+    // Warm the camera up NOW, on the first page, so its slow cold-start (old hardware)
+    // is already done by the time the instructor reaches the picker / recording.
+    void warmUpCamera();
   }, [navigate, loadRecent]);
 
   if (loading && !status) {
