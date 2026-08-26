@@ -95,6 +95,108 @@ class SystemStatusResponse(BaseModel):
     error: str | None = None
 
 
+class CameraDeviceResponse(BaseModel):
+    device_id: str
+    kind: str
+    label: str
+    status: str
+    available: bool
+    message: str
+    index: int | None = None
+    host: str | None = None
+    port: int | None = None
+    has_sub_stream: bool = False
+    capabilities: dict = Field(default_factory=dict)
+    warm: bool = False
+    preview_state: str | None = None
+    preview_error: str | None = None
+
+
+class CameraDeviceListResponse(BaseModel):
+    devices: list[CameraDeviceResponse] = Field(default_factory=list)
+    default_device_id: str | None = None
+    available_count: int = 0
+    message: str = ""
+
+
+class CameraWarmupResponse(BaseModel):
+    warmed: list[str] = Field(default_factory=list)
+    skipped: bool = False
+    message: str = ""
+
+
+class CameraConfigEntry(BaseModel):
+    slug: str
+    device_id: str
+    label: str
+    host: str
+    port: int
+    username: str = ""
+    password_set: bool = False
+    # Always masked — the real password never leaves the server.
+    password: str = ""
+    main_url: str = ""
+    sub_url: str = ""
+    status: str = "unknown"
+    message: str = ""
+    available: bool = False
+
+
+class CameraConfigListResponse(BaseModel):
+    cameras: list[CameraConfigEntry] = Field(default_factory=list)
+    config_path: str
+    config_exists: bool
+    message: str = ""
+
+
+class CameraConfigTestRequest(BaseModel):
+    host: str
+    port: int = 554
+    username: str = "admin"
+    password: str = ""
+    # Optional: skip path detection and test this exact path.
+    main_path: str | None = None
+    # Supplied when editing an existing camera, so a masked password resolves.
+    slug: str | None = None
+
+
+class CameraConfigTestResponse(BaseModel):
+    success: bool
+    outcome: str
+    message: str
+    main_path: str | None = None
+    sub_path: str | None = None
+    detected_family: str | None = None
+
+
+class CameraConfigSaveRequest(BaseModel):
+    slug: str = ""
+    label: str = ""
+    host: str
+    port: int = 554
+    username: str = "admin"
+    password: str = ""
+    main_path: str | None = None
+    sub_path: str | None = None
+    # Refuse to save credentials the camera rejects, unless explicitly told to.
+    verify: bool = True
+
+
+class CameraConfigSaveResponse(BaseModel):
+    slug: str
+    device_id: str
+    saved: bool
+    detected_family: str | None = None
+    status: str = "unknown"
+    message: str = ""
+
+
+class CameraConfigDeleteResponse(BaseModel):
+    slug: str
+    deleted: bool
+    message: str = ""
+
+
 class CameraDiagnosticsResponse(BaseModel):
     camera_type: str
     camera_host: str | None = None
@@ -105,6 +207,8 @@ class CameraDiagnosticsResponse(BaseModel):
     sub_stream_openable: bool
     last_checked_at: str
     message: str
+    device_count: int = 0
+    available_device_count: int = 0
 
 
 class ErrorResponse(BaseModel):

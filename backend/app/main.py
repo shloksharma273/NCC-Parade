@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from .api.camera_config_routes import router as camera_config_router
 from .api.camera_routes import router as camera_router
 from .api.decision_routes import router as decision_router
 # TEMPORARY (dev-only): video test harness, see api/dev_test_routes.py
@@ -58,6 +59,7 @@ app.include_router(readiness_router)
 app.include_router(snapshot_router)
 app.include_router(session_router)
 app.include_router(camera_router)
+app.include_router(camera_config_router)
 app.include_router(recording_router)
 app.include_router(report_router)
 app.include_router(decision_router)

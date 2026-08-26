@@ -4,7 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from ..models.api_models import ActionResponse, ProgressResponse
 from ..models.session_models import SessionStatus
-from ..video_pipeline.camera_service import camera_service
+from ..video_pipeline.camera_service import camera_service, resolve_device_id
 from ..video_pipeline.preview_service import preview_service
 from ..services.processing_service import processing_service
 from ..video_pipeline.recording_service import recording_service
@@ -38,8 +38,8 @@ async def start_recording(session_id: str) -> ActionResponse:
             },
         )
 
-    camera_id = int(session["camera_id"]) if session["camera_id"].isdigit() else None
-    connection = camera_service.check_camera_connection(usb_index=camera_id)
+    device_id = resolve_device_id(session["camera_id"])
+    connection = camera_service.check_device_connection(device_id)
     if not connection["camera_connected"]:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -56,8 +56,8 @@ async def start_recording(session_id: str) -> ActionResponse:
         session_service.transition(session_id, SessionStatus.READY)
 
     try:
-        await preview_service.stop()
-        await recording_service.start(session_id, camera_id)
+        await preview_service.stop_all()
+        await recording_service.start(session_id, device_id=device_id)
     except RuntimeError as exc:
         raw = str(exc)
         code = raw.split(":")[0]

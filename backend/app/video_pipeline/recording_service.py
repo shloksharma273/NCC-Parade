@@ -21,11 +21,20 @@ class RecordingService:
     def stream_failed(self) -> bool:
         return self._stream_failed
 
-    async def start(self, session_id: str, camera_id: int | None = None) -> Path:
+    async def start(
+        self,
+        session_id: str,
+        camera_id: int | str | None = None,
+        device_id: str | None = None,
+    ) -> Path:
         with self._lock:
             if camera_service.active_session_id is not None:
                 raise RuntimeError("RECORDING_ALREADY_ACTIVE")
-            output_path = camera_service.start_recording(session_id, camera_id)
+            output_path = camera_service.start_recording(
+                session_id,
+                camera_id,
+                device_id=device_id,
+            )
             self._running = True
             self._stream_failed = False
 

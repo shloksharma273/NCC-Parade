@@ -14,6 +14,7 @@ import { ManualDecisionPage } from "./pages/ManualDecisionPage";
 import { AttemptHistoryPage } from "./pages/AttemptHistoryPage";
 import { RecentSessionsPage } from "./pages/RecentSessionsPage";
 import { AdminStatusPage } from "./pages/AdminStatusPage";
+import { ConfigureCameraPage } from "./pages/ConfigureCameraPage";
 
 function RequireBackend({ children }: { children: React.ReactNode }) {
   if (!getBackendUrl()) {
@@ -37,6 +38,7 @@ export default function App() {
           }
         />
         <Route path="/admin" element={<RequireBackend><AdminStatusPage /></RequireBackend>} />
+        <Route path="/admin/camera" element={<RequireBackend><ConfigureCameraPage /></RequireBackend>} />
         <Route path="/sessions/new" element={<RequireBackend><NewSessionPage /></RequireBackend>} />
         <Route path="/sessions/recent" element={<RequireBackend><RecentSessionsPage /></RequireBackend>} />
         <Route path="/sessions/:sessionId/readiness" element={<RequireBackend><ReadinessCheckPage /></RequireBackend>} />

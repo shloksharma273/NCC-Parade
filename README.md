@@ -69,6 +69,16 @@ On startup the server prints a QR code and serves:
 | `http://<PC_IP>:8000/app` | Tablet webapp (scan QR to open) |
 | `http://<PC_IP>:8000/docs` | API documentation |
 
+**Camera selection:** The "New Drill Session" screen shows a live thumbnail of
+every USB and IP camera the server can reach, so the operator picks one by
+looking rather than by typing an index.
+
+**IP camera setup:** Open **Admin -> Configure Camera** on the tablet to enter a
+network camera's IP, username and password. "Test Connection" reports whether
+the credentials or the stream path is at fault, auto-detects the stream paths for
+common vendors (CP Plus/Dahua, Hikvision and others), and writes the result to
+`backend/.env` — no restart needed.
+
 **Tablet pairing:** Scan the terminal or `/pair` QR code from the tablet. The webapp auto-saves the backend URL — no manual IP entry needed.
 
 Create a session with `"drill_type": "salute"`, `"drill_type": "kadam_tal"`, or `"drill_type": "slow_march"`.

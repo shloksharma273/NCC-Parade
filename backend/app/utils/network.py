@@ -49,6 +49,61 @@ def _all_interface_ips() -> list[str]:
     return ips
 
 
+def local_ipv4_addresses() -> list[str]:
+    """Every non-loopback IPv4 address on this machine."""
+    addresses = set(_all_interface_ips())
+    for target_ip, target_port in _PROBE_TARGETS:
+        ip = _udp_probe(target_ip, target_port)
+        if ip:
+            addresses.add(ip)
+    return sorted(addresses)
+
+
+def _same_slash24(a: str, b: str) -> bool:
+    return a.rsplit(".", 1)[0] == b.rsplit(".", 1)[0]
+
+
+def connect_best_effort(host: str, port: int, timeout: float) -> socket.socket:
+    """Open a TCP connection, trying each local interface that could reach *host*.
+
+    On a multi-homed PC with two NICs in the same subnet — a Wi-Fi network and a
+    camera on Ethernet both numbered 192.168.1.x — the default route is a
+    coin flip, and half the time the connection leaves via the interface that
+    cannot see the camera and simply times out. So when the default route fails,
+    retry explicitly bound to each local address on the target's subnet.
+
+    Raises OSError if no interface can reach the target.
+    """
+    last_error: OSError | None = None
+
+    def attempt(source_ip: str | None) -> socket.socket:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock.settimeout(timeout)
+            if source_ip:
+                sock.bind((source_ip, 0))
+            sock.connect((host, port))
+            return sock
+        except OSError:
+            sock.close()
+            raise
+
+    try:
+        return attempt(None)
+    except OSError as exc:
+        last_error = exc
+
+    for source_ip in local_ipv4_addresses():
+        if source_ip.startswith("169.254.") or not _same_slash24(source_ip, host):
+            continue
+        try:
+            return attempt(source_ip)
+        except OSError as exc:
+            last_error = exc
+
+    raise last_error if last_error else OSError(f"Could not connect to {host}:{port}")
+
+
 def get_local_ip() -> str:
     """
     Return the best local IPv4 address for LAN access, in priority order:

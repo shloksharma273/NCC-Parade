@@ -1,54 +1,36 @@
+"""Preview lifecycle.
+
+Frame reading now happens on the pool's own per-device threads, so this layer is
+a thin async-friendly facade over :mod:`device_pool` rather than a capture loop
+of its own.
+"""
+
 from __future__ import annotations
 
-import asyncio
-import threading
-
-from .camera_service import camera_service
+from .camera_service import camera_service, resolve_device_id
+from .device_pool import device_pool
 
 
 class PreviewService:
-    def __init__(self) -> None:
-        self._lock = threading.Lock()
-        self._loop_task: asyncio.Task | None = None
-        self._running = False
+    async def start(self, camera_id: int | str | None = None, device_id: str | None = None) -> str:
+        """Warm one device for preview. Returns the resolved device id."""
+        target = device_id if device_id is not None else camera_id
+        camera_service.start_preview(target)
+        return resolve_device_id(target)
 
-    def _ensure_capture_loop(self) -> None:
-        if self._loop_task is None or self._loop_task.done():
-            self._loop_task = asyncio.create_task(self._capture_loop())
+    async def start_all(self) -> list[str]:
+        """Warm every reachable camera — used to prefetch from the landing page."""
+        return camera_service.warm_all_available()
 
-    async def start(self, usb_index: int | None = None) -> None:
-        with self._lock:
-            if self._running:
-                if camera_service.active_session_id is None and not camera_service.preview_active:
-                    camera_service.start_preview(usb_index)
-                self._ensure_capture_loop()
-                return
-            camera_service.start_preview(usb_index)
-            self._running = True
+    async def stop(self, device_id: str | None = None) -> None:
+        camera_service.stop_preview(device_id)
 
-        self._ensure_capture_loop()
-
-    async def _capture_loop(self) -> None:
-        while self._running:
-            ok = await asyncio.to_thread(camera_service.read_frame)
-            if not ok:
-                await asyncio.sleep(0.05)
-                continue
-            await asyncio.sleep(1 / 15)
+    async def stop_all(self) -> None:
+        device_pool.release_all()
 
     async def stop_loop(self) -> None:
-        self._running = False
-        if self._loop_task is not None:
-            try:
-                await self._loop_task
-            except asyncio.CancelledError:
-                pass
-            self._loop_task = None
-
-    async def stop(self) -> None:
-        await self.stop_loop()
-        with self._lock:
-            camera_service.stop_preview()
+        """Kept for backward compatibility with earlier callers."""
+        await self.stop_all()
 
 
 preview_service = PreviewService()

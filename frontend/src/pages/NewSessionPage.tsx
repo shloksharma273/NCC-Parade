@@ -5,6 +5,7 @@ import { parseApiError } from "../api/client";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { PageLayout } from "../components/PageLayout";
+import { CameraSelector } from "../components/CameraSelector";
 import { useSessionState } from "../hooks/useSessionState";
 import { DRILL_OPTIONS } from "../utils/resultMapper";
 import type { SessionStatus } from "../types/session";
@@ -38,7 +39,7 @@ export function NewSessionPage() {
   const [squad, setSquad] = useState("");
   const [unit, setUnit] = useState("");
   const [drillType, setDrillType] = useState(retakeContext?.drill_type ?? "kadam_tal");
-  const [cameraId, setCameraId] = useState(retakeContext?.camera_id ?? "0");
+  const [cameraId, setCameraId] = useState(retakeContext?.camera_id ?? "usb:0");
   const [cameraView, setCameraView] = useState<string>(
     DRILL_OPTIONS.find((d) => d.value === (retakeContext?.drill_type ?? "kadam_tal"))?.cameraView ?? "Side",
   );
@@ -59,6 +60,10 @@ export function NewSessionPage() {
     }
     if (selectedDrill && !selectedDrill.backendSupported) {
       setError(`${selectedDrill.label} is not available yet.`);
+      return;
+    }
+    if (!cameraId) {
+      setError("Select a camera to record with.");
       return;
     }
 
@@ -189,10 +194,7 @@ export function NewSessionPage() {
           </div>
         )}
 
-        <label className="block">
-          <span className="mb-2 block font-semibold">Camera ID</span>
-          <input value={cameraId} onChange={(e) => setCameraId(e.target.value)} className="w-full rounded-xl border-2 border-[var(--color-khaki)] px-4 py-4 text-lg" />
-        </label>
+        <CameraSelector value={cameraId} onChange={setCameraId} />
 
         <PrimaryButton type="submit" disabled={loading}>
           {loading ? "Creating..." : "Continue to Readiness Check"}

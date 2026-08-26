@@ -6,7 +6,7 @@ from ..config import SUPPORTED_DRILL_TYPES
 from ..db.repositories import ProgressRepository, SessionRepository
 from ..models.api_models import CreateSessionRequest
 from ..models.session_models import SessionStatus, can_transition
-from ..video_pipeline.camera_service import camera_service
+from ..video_pipeline.camera_service import camera_service, resolve_device_id
 from ..services.storage_service import storage_service
 from ..utils.id_generator import generate_session_id
 from ..utils.time_utils import utc_now_iso
@@ -29,8 +29,11 @@ class SessionService:
 
         session_id = generate_session_id(self.sessions)
         attempt_number = self.sessions.next_attempt_number(request.cadet_id, request.drill_type)
-        camera_id = request.camera_id or "0"
-        camera_ok = camera_service.check_camera(int(camera_id))
+        # Normalise to a device id ("usb:0", "ip:front_gate"). Bare indices are
+        # still accepted from older clients and from rows created before device
+        # ids existed.
+        camera_id = resolve_device_id(request.camera_id)
+        camera_ok = camera_service.check_camera(camera_id)
 
         initial_status = SessionStatus.READY if camera_ok else SessionStatus.CREATED
         session = self.sessions.create_session(

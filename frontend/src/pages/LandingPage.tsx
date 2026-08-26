@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { checkHealth } from "../api/statusApi";
+import { warmupCameras } from "../api/cameraApi";
 import { parseApiError } from "../api/client";
 import { LoadingState } from "../components/LoadingState";
 import { PageLayout } from "../components/PageLayout";
@@ -29,6 +30,14 @@ export function LandingPage() {
         setBackendUrl(normalizeBackendUrl(target));
         await checkHealth();
         setStatus("ok");
+
+        // Open every reachable camera now, while the operator is still filling
+        // in the session form, so the camera chooser has frames ready instead of
+        // a row of black boxes. Nothing is displayed here and nothing waits on
+        // it: the backend opens each camera on its own thread and closes any it
+        // is not asked about again.
+        void warmupCameras();
+
         setTimeout(() => navigate("/dashboard", { replace: true }), 600);
       } catch (err) {
         setStatus("error");

@@ -56,6 +56,12 @@ export function AdminStatusPage() {
         </div>
       )}
 
+      <div className="mt-6">
+        <PrimaryButton onClick={() => navigate("/admin/camera")}>
+          Configure Camera
+        </PrimaryButton>
+      </div>
+
       <div className="command-card mt-6 space-y-3 p-6">
         <p className="font-command text-lg font-bold">Camera Diagnostics</p>
         {diagLoading && <LoadingState message="Checking RTSP streams..." />}

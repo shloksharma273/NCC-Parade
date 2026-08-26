@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..video_pipeline.camera_service import camera_service
+from ..video_pipeline.camera_service import camera_service, resolve_device_id
 from ..services.session_service import session_service
 from ..services.storage_service import storage_service
 from ..config import settings
@@ -73,8 +73,8 @@ class ReadinessService:
 
     def session_readiness(self, session_id: str) -> dict:
         session = session_service.get_session(session_id)
-        usb_index = int(session["camera_id"]) if str(session["camera_id"]).isdigit() else None
-        connection = camera_service.check_camera_connection(usb_index=usb_index)
+        device_id = resolve_device_id(session["camera_id"])
+        connection = camera_service.check_device_connection(device_id)
         camera_ok = connection["camera_connected"]
 
         checks = [
