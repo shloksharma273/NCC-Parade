@@ -8,10 +8,16 @@ from urllib.parse import quote, urlparse
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-load_dotenv()
-
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = BACKEND_ROOT.parent
+
+# Load .env files by absolute path. A bare load_dotenv() searches upward from
+# the working directory, so backend/.env — where backend/.env.example tells
+# operators to put their settings, and where the camera-configuration screen
+# writes — was never found when the server is started from the repo root.
+# The project-root file is loaded first so backend/.env wins on conflict.
+load_dotenv(PROJECT_ROOT / ".env")
+load_dotenv(BACKEND_ROOT / ".env", override=True)
 
 MEDIA_DIR = BACKEND_ROOT / "media"
 RAW_MEDIA_DIR = MEDIA_DIR / "raw"

@@ -26,6 +26,7 @@ CRLF = "\r\n"
 # Ordered by likelihood. CP Plus / Dahua first, since that family is the most
 # common on this deployment, then Hikvision and other widespread schemes.
 CANDIDATE_PATHS: list[tuple[str, str, str]] = [
+    ("video/live?channel=1&subtype=0", "video/live?channel=1&subtype=1", "CP Plus (video/live)"),
     ("cam/realmonitor?channel=1&subtype=0", "cam/realmonitor?channel=1&subtype=1", "CP Plus / Dahua"),
     ("Streaming/Channels/101", "Streaming/Channels/102", "Hikvision"),
     ("live/ch00_0", "live/ch00_1", "Generic (ch00)"),
