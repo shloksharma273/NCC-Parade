@@ -123,7 +123,7 @@ class SessionService:
         from ..config import settings
         from ..ml.drill_analyzer import drill_analyzer
 
-        connection = camera_service.check_camera_connection()
+        connection = camera_service.check_any_connection()
         camera_ok = connection["camera_connected"]
         active = camera_service.active_session_id
 

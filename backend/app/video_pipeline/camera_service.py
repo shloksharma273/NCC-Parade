@@ -200,6 +200,35 @@ class CameraService:
     def check_camera(self, camera_id: int | str | None = None) -> bool:
         return self.check_device_connection(camera_id)["camera_connected"]
 
+    def check_any_connection(self) -> dict:
+        """Whether *some* camera is usable — the default device or any other.
+
+        The system-wide checks must not insist on the default device (``usb:0``
+        in USB mode): a rig of IP cameras with no USB camera plugged in is a
+        valid setup. Each session still checks the camera it actually uses.
+        """
+        default = self.check_device_connection(None)
+        if default["camera_connected"]:
+            return default
+
+        if self._active_session_id is not None and self._active_device_id:
+            return self.check_device_connection(self._active_device_id)
+
+        for device in camera_registry.discover():
+            if device.available or device_pool.is_warm(device.device_id):
+                return {
+                    "camera_connected": True,
+                    "device_id": device.device_id,
+                    "message": f"{device.label} is reachable.",
+                }
+
+        return {
+            "camera_connected": False,
+            "device_id": default["device_id"],
+            "error": default.get("error", "CAMERA_NOT_FOUND"),
+            "message": "No camera could be opened. Connect a USB camera or configure an IP camera.",
+        }
+
     def test_stream_openable(self, stream_type: StreamType) -> bool:
         if settings.is_ip_camera():
             url = settings.rtsp_sub_url() if stream_type == "sub" else settings.rtsp_main_url()

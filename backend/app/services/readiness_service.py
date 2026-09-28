@@ -13,7 +13,7 @@ class ReadinessService:
         return {"key": key, "name": name, "status": status, "message": message}
 
     def global_readiness(self) -> dict:
-        camera_ok = camera_service.check_camera(settings.camera_id)
+        camera_ok = camera_service.check_any_connection()["camera_connected"]
         from ..ml.drill_analyzer import drill_analyzer
 
         model_ok = drill_analyzer.model_ready
