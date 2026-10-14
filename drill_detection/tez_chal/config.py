@@ -56,4 +56,10 @@ class PipelineConfig:
     # --- Camera view: quick march is filmed front-on in the samples --------------------
     view: str = "front"
 
+    # --- Cadet crop: feed MediaPipe a padded box around the cadet instead of the
+    #     full frame (see drill_detection/cadet_crop.py). Padding is a fraction of
+    #     the body height added on every side. ------------------------------------
+    crop_to_cadet: bool = False  # off until validated on more footage
+    crop_padding: float = 0.25
+
     report_metadata: ReportMetadata | None = None

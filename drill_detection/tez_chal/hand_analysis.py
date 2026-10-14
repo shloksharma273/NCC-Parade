@@ -13,6 +13,7 @@ from mediapipe.tasks.python.vision import (
     RunningMode,
 )
 
+from ..cadet_crop import CropBox, nearest_box, place_on_canvas, uncrop_result
 from .difficulty import scaled_tolerances
 from .mediapipe_models import ensure_models
 from .scoring import FIST_CURL_BAND, score_by_max
@@ -101,6 +102,7 @@ def _fist_for_single_frame(
     frame_index: int,
     perfect: float,
     fail: float,
+    cadet_boxes: dict[int, CropBox] | None = None,
 ) -> tuple[float, int]:
     """(mean fist score across detected hands, hands_detected) for ONE frame.
     Returns (nan, 0) when the frame is unreadable or no hand is found."""
@@ -108,8 +110,13 @@ def _fist_for_single_frame(
     if frame_bgr is None:
         return float("nan"), 0
     height, width = frame_bgr.shape[:2]
-    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB))
-    result = landmarker.detect(mp_image)
+    # Crop to the cadet's box from the pose pass (nearest frame that had one);
+    # landmarks are mapped back so the fist maths stays in full-frame pixels.
+    # Frame-sized canvas: one landmarker must always see the same image size.
+    box = (nearest_box(cadet_boxes, frame_index) if cadet_boxes else None) or CropBox.full(width, height)
+    view = place_on_canvas(frame_bgr, box, canvas=(width, height))
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(view.image, cv2.COLOR_BGR2RGB))
+    result = uncrop_result(landmarker.detect(mp_image), view)
     hands = [h for h in (result.left_hand_landmarks or None, result.right_hand_landmarks or None) if h]
     if not hands:
         return float("nan"), 0
@@ -125,6 +132,7 @@ def analyze_hands_for_frames(
     snap_window: int = 0,
     snap_step: int = 1,
     frame_count: int | None = None,
+    cadet_boxes: dict[int, CropBox] | None = None,
 ) -> dict[int, HandScore]:
     """Pass 2: re-run Holistic in IMAGE mode near each key frame and score the
     fist-closed parameter.
@@ -150,7 +158,7 @@ def analyze_hands_for_frames(
             fist_vals: list[float] = []
             max_hands = 0
             for idx in sample_idxs:
-                fist, hands = _fist_for_single_frame(landmarker, video_path, idx, fist_perfect, fist_fail)
+                fist, hands = _fist_for_single_frame(landmarker, video_path, idx, fist_perfect, fist_fail, cadet_boxes)
                 if hands > 0:
                     fist_vals.append(fist)
                     max_hands = max(max_hands, hands)

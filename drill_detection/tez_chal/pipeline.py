@@ -14,6 +14,7 @@ from mediapipe.tasks.python.vision import (
     RunningMode,
 )
 
+from ..cadet_crop import CadetTracker, CropBox, place_on_canvas, uncrop_result
 from .config import PipelineConfig
 from .hand_analysis import analyze_hands_for_frames
 from .key_frame_detection import find_step_peaks
@@ -154,6 +155,11 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
     processed_frames = 0
     valid_frames = 0
     metrics: list[TezChalFrameMetrics] = []
+    tracker = CadetTracker(padding=config.crop_padding, enabled=config.crop_to_cadet)
+    cropped_frames = 0
+    # Box around the cadet on each frame where a pose was found, reused by the
+    # hand pass so it crops the frames near each key frame the same way.
+    cadet_boxes: dict[int, CropBox] = {}
 
     try:
         while True:
@@ -165,11 +171,18 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
                 continue
 
             height, width = frame_bgr.shape[:2]
-            frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            box = tracker.box_for(width, height)
+            cropped_frames += not box.is_full
+            # Frame-sized canvas: Holistic rejects images that change size.
+            view = place_on_canvas(frame_bgr, box, canvas=(width, height))
+            frame_rgb = cv2.cvtColor(view.image, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
             timestamp_ms = (frame_index / fps) * 1000.0
 
-            result = holistic.detect_for_video(mp_image, int(timestamp_ms))
+            result = uncrop_result(holistic.detect_for_video(mp_image, int(timestamp_ms)), view)
+            cadet_box = tracker.update(result.pose_landmarks, width, height)
+            if cadet_box is not None:
+                cadet_boxes[frame_index] = cadet_box
             processed_frames += 1
 
             frame_metrics = compute_frame_metrics(
@@ -203,6 +216,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         snap_window=config.hand_snap_window,
         snap_step=config.hand_snap_step,
         frame_count=frame_index,  # total frames read (upper bound for clamping the snap window)
+        cadet_boxes=cadet_boxes if config.crop_to_cadet else None,
     )
 
     key_frames: list[dict] = []
@@ -263,6 +277,8 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         "difficulty": config.difficulty,
         "view": config.view,
         "inter_leg_vector": config.inter_leg_vector,
+        "crop_to_cadet": config.crop_to_cadet,
+        "cropped_frames": cropped_frames,
         "report_metadata": config.report_metadata.to_dict() if config.report_metadata else None,
         "summary": {
             "iteration_count": iteration_count,
@@ -290,6 +306,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         "video": str(video_path),
         "processed_frames": processed_frames,
         "valid_scored_frames": valid_frames,
+        "cropped_frames": cropped_frames,
         "iteration_count": iteration_count,
         "peak_count": iteration_count,
         "total_score": total_score,
