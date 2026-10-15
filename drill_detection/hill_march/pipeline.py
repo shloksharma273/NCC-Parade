@@ -32,12 +32,8 @@ def _iter_videos(input_path: Path) -> list[Path]:
 
 
 def _score_frame_from_metrics(item: HillMarchFrameMetrics, config: PipelineConfig) -> FrameScore:
-    # Parameter-1 full-marks threshold depends on the camera view (front 50 / side 70).
-    legs_apart_full_deg = (
-        config.legs_apart_full_deg_front if config.view == "front" else config.legs_apart_full_deg_side
-    )
     return score_frame(
-        inter_leg_angle_deg=item.inter_leg_angle_deg,
+        kick_angle_deg=item.kick_angle_deg,
         left_elbow_angle_deg=item.left_elbow_angle_deg,
         right_elbow_angle_deg=item.right_elbow_angle_deg,
         left_arm_abduction_deg=item.left_arm_abduction_deg,
@@ -47,7 +43,10 @@ def _score_frame_from_metrics(item: HillMarchFrameMetrics, config: PipelineConfi
         head_yaw_ratio=item.head_yaw_ratio,
         head_tilt_deg=item.head_tilt_deg,
         difficulty=config.difficulty,
-        legs_apart_full_deg=legs_apart_full_deg,
+        kick_full_deg=config.kick_full_deg,
+        kick_zero_deg=config.kick_zero_deg,
+        # Front-on, a straight arm swung toward the camera looks bent: elbows not scored.
+        score_arm_straightness=config.view != "front",
         target_arm_angle_deg=config.target_arm_angle_deg,
         target_knee_angle_deg=config.target_knee_angle_deg,
         target_head_tilt_deg=config.target_head_tilt_deg,
@@ -60,7 +59,8 @@ def _key_frame_to_json(rank: int, video_name: str, item: HillMarchFrameMetrics, 
         "video_name": video_name,
         "frame_index": item.frame_index,
         "timestamp_ms": round(item.timestamp_ms, 2),
-        "inter_leg_angle_deg": round(item.inter_leg_angle_deg, 2),  # separation between legs (key signal + param 1)
+        "kick_angle_deg": round(item.kick_angle_deg, 2),  # kick height (key signal + param 1)
+        "inter_leg_angle_deg": round(item.inter_leg_angle_deg, 2),  # informational only
         "left_elbow_angle_deg": round(item.left_elbow_angle_deg, 2),
         "right_elbow_angle_deg": round(item.right_elbow_angle_deg, 2),
         "left_arm_abduction_deg": round(item.left_arm_abduction_deg, 2),
@@ -91,7 +91,7 @@ def _draw_annotations(frame: np.ndarray, m: HillMarchFrameMetrics, s: FrameScore
     draw_chain([m.right_shoulder_px, m.right_elbow_px, m.right_wrist_px], (0, 200, 255))
     cv2.circle(rendered, (int(m.nose_px[0]), int(m.nose_px[1])), 4, (0, 255, 255), -1)
 
-    cv2.putText(rendered, f"score {s.total:.1f}/10  sep {m.inter_leg_angle_deg:.0f}deg  f#{m.frame_index}",
+    cv2.putText(rendered, f"score {s.total:.1f}/10  kick {m.kick_angle_deg:.0f}deg  f#{m.frame_index}",
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
     cv2.putText(rendered, f"apart {s.legs_apart:.0f}  arms {s.arms:.0f}  legs {s.legs_straight:.0f}  head {s.head_straight:.0f}",
                 (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 255, 255), 2, cv2.LINE_AA)
@@ -198,7 +198,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         cap.release()
         holistic.close()
 
-    # Key frames = hill-march step extremes: inter-leg separation at a local maximum.
+    # Key frames = hill-march kicks: kick angle at a local maximum.
     key_frames_metrics = find_step_peaks(metrics, config)
 
     key_frames: list[dict] = []
@@ -244,6 +244,8 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         "difficulty": config.difficulty,
         "view": config.view,
         "inter_leg_vector": config.inter_leg_vector,
+        "kick_full_deg": config.kick_full_deg,
+        "kick_zero_deg": config.kick_zero_deg,
         "crop_to_cadet": config.crop_to_cadet,
         "cropped_frames": cropped_frames,
         "report_metadata": config.report_metadata.to_dict() if config.report_metadata else None,

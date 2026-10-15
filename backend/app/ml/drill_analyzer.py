@@ -62,7 +62,7 @@ class DrillAnalyzer:
             # three parameters in either view (arms/legs straight, fist closed).
             return self._analyze_tez_chal(video_path, session_id, progress_callback, view)
         if drill_type == "hill_march":
-            # view ("front" | "side") sets the legs-apart threshold (front 50 / side 70).
+            # view ("front" | "side"): front view scores the arms on "close to body" only.
             return self._analyze_hill_march(video_path, session_id, progress_callback, view)
         raise ValueError(f"Drill type '{drill_type}' is not implemented yet.")
 
@@ -442,7 +442,7 @@ class DrillAnalyzer:
             "iteration_count": iteration_count,
             "result": self._result_label(avg_score * 10),
             "summary": self._build_hill_march_summary(key_frames, avg_score, iteration_count),
-            "parameters": self._build_hill_march_parameters(key_frames),
+            "parameters": self._build_hill_march_parameters(key_frames, config.view),
             "annotated_video_path": None,
             "key_frame_path": key_frame_path,
             "ml_results_path": str(results_path),
@@ -771,13 +771,20 @@ class DrillAnalyzer:
         return summaries
 
     @staticmethod
-    def _build_hill_march_parameters(key_frames: list[dict]) -> list[dict]:
+    def _build_hill_march_parameters(key_frames: list[dict], view: str = "front") -> list[dict]:
         if not key_frames:
             return []
 
+        # Front view can't judge elbow straightness, so "arms" is close-to-body only.
+        arms = (
+            ("Arms Close", "arms", "close to body", "Keep the arms held close to the body.")
+            if view == "front"
+            else ("Arms Straight & Close", "arms", "straight & close to body",
+                  "Keep the arms straight and held close to the body.")
+        )
         keys = [
-            ("Legs Apart", "legs_apart", "wide leg separation", "Drive the legs further apart at the step extreme."),
-            ("Arms Straight & Close", "arms", "straight & close to body", "Keep the arms straight and held close to the body."),
+            ("Legs Apart", "legs_apart", "high kick (≥60°)", "Kick the leg higher at each step."),
+            arms,
             ("Legs Straight", "legs_straight", "180° (straight knees)", "Keep both legs straight."),
             ("Head Straight", "head_straight", "upright, facing front", "Keep the head upright and look straight ahead."),
         ]

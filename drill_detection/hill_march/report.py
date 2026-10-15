@@ -134,10 +134,10 @@ def _score_cell(rank: int, frame_index: int, total_score: float, styles) -> Para
     )
 
 
-def _parameter_cell(score: dict, legs_apart_full_deg: float, styles) -> Paragraph:
+def _parameter_cell(score: dict, kick_full_deg: float, arms_label: str, styles) -> Paragraph:
     body = (
-        f"Legs Apart (&ge;{legs_apart_full_deg:.0f}°): {score['legs_apart']:.2f}/10<br/>"
-        f"Arms Straight &amp; Close: {score['arms']:.2f}/10<br/>"
+        f"Legs Apart (kick &ge;{kick_full_deg:.0f}°): {score['legs_apart']:.2f}/10<br/>"
+        f"{arms_label}: {score['arms']:.2f}/10<br/>"
         f"Legs Straight: {score['legs_straight']:.2f}/10<br/>"
         f"Head Straight: {score['head_straight']:.2f}/10"
     )
@@ -157,8 +157,9 @@ def generate_pdf_report(
 
     key_frames = results.get("peak_frames", [])
     summary = results.get("summary", {})
-    # Parameter-1 full-marks threshold shown in the table depends on the camera view.
-    legs_apart_full_deg = 50.0 if results.get("view") == "front" else 70.0
+    kick_full_deg = float(results.get("kick_full_deg", 60.0))
+    # Front view scores the arms on "close to body" only (elbows can't be judged face-on).
+    arms_label = "Arms Close" if results.get("view") == "front" else "Arms Straight &amp; Close"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     doc = SimpleDocTemplate(
@@ -194,7 +195,7 @@ def generate_pdf_report(
         table_data.append([
             image_cell,
             _score_cell(frame["rank"], frame["frame_index"], score["total"], styles),
-            _parameter_cell(score, legs_apart_full_deg, styles),
+            _parameter_cell(score, kick_full_deg, arms_label, styles),
         ])
 
     table = Table(table_data, colWidths=[IMAGE_COL_WIDTH, SCORE_COL_WIDTH, PARAM_COL_WIDTH], repeatRows=1)

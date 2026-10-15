@@ -38,7 +38,7 @@ def score_by_max(value: float, perfect_max: float, fail_max: float) -> float:
 
 def score_by_min(value: float, perfect_min: float, fail_min: float) -> float:
     """Larger is better: 10 at/above perfect_min, 0 at/below fail_min, linear between.
-    Used for parameter 1 (the inter-leg angle should be MORE than ~70 deg)."""
+    Used for parameter 1 (the kick angle should be MORE than ~60 deg)."""
     if math.isnan(value):
         return 0.0
     if value >= perfect_min:
@@ -53,9 +53,9 @@ def score_by_min(value: float, perfect_min: float, fail_min: float) -> float:
 # Each tuple = (perfect_at_easy, perfect_at_hard, fail_at_easy, fail_at_hard) fed into
 # scaled_tolerances(difficulty, ...).
 # --------------------------------------------------------------------------------------
-# Parameter 1 — legs apart. VIEW-DEPENDENT threshold passed in from config
-# (front 50 deg, side 70 deg): full marks at/above it, linear ramp down to 0 at 0 deg.
-# Parameter 2a — arms straight: elbow error vs 180 deg (score_by_tolerance).
+# Parameter 1 — legs apart: kick angle, thresholds passed in from config
+# (full marks at/above kick_full_deg, linear ramp down to 0 at kick_zero_deg).
+# Parameter 2a — arms straight: elbow error vs 180 deg (score_by_tolerance). SIDE view only.
 ARM_STRAIGHT_BAND = (15.0, 5.0, 45.0, 20.0)
 # Parameter 2b — arms close to body: shoulder abduction toward torso (score_by_max, 0 == alongside).
 ARM_CLOSE_BAND = (15.0, 6.0, 55.0, 30.0)
@@ -94,7 +94,7 @@ class FrameScore:
 
 def score_frame(
     *,
-    inter_leg_angle_deg: float,
+    kick_angle_deg: float,
     left_elbow_angle_deg: float,
     right_elbow_angle_deg: float,
     left_arm_abduction_deg: float,
@@ -104,32 +104,38 @@ def score_frame(
     head_yaw_ratio: float,
     head_tilt_deg: float,
     difficulty: float,
-    legs_apart_full_deg: float,
+    kick_full_deg: float,
+    kick_zero_deg: float,
+    score_arm_straightness: bool = True,
     target_arm_angle_deg: float = 180.0,
     target_knee_angle_deg: float = 180.0,
     target_head_tilt_deg: float = 0.0,
 ) -> FrameScore:
     """Score one key frame /10 on the four hill-march parameters, then weight-average.
 
-    legs_apart_full_deg is the view-dependent angle earning full marks for parameter 1
-    (front 50 deg, side 70 deg); the score ramps linearly down to 0 at 0 deg.
+    Parameter 1 scores the kick angle: full marks at/above kick_full_deg, linear down
+    to 0 at kick_zero_deg. ``score_arm_straightness=False`` (front view) leaves the
+    elbows out, so parameter 2 is "close to body" alone.
     """
 
-    # --- 1. Legs apart: inter-leg angle >= the view's full-marks threshold ---
-    legs_apart = score_by_min(inter_leg_angle_deg, legs_apart_full_deg, 0.0)
+    # --- 1. Legs apart: kick angle >= kick_full_deg ---
+    legs_apart = score_by_min(kick_angle_deg, kick_full_deg, kick_zero_deg)
 
-    # --- 2. Arms straight AND close to body: mean of (elbow straightness, abduction) ---
-    arm_perfect, arm_fail = scaled_tolerances(difficulty, *ARM_STRAIGHT_BAND)
-    straight = np.mean([
-        score_by_tolerance(left_elbow_angle_deg, target_arm_angle_deg, arm_perfect, arm_fail),
-        score_by_tolerance(right_elbow_angle_deg, target_arm_angle_deg, arm_perfect, arm_fail),
-    ])
+    # --- 2. Arms close to body (+ straight, side view only) ---
     close_perfect, close_fail = scaled_tolerances(difficulty, *ARM_CLOSE_BAND)
-    close = np.mean([
+    close = float(np.mean([
         score_by_max(left_arm_abduction_deg, close_perfect, close_fail),
         score_by_max(right_arm_abduction_deg, close_perfect, close_fail),
-    ])
-    arms = float(np.mean([straight, close]))
+    ]))
+    if score_arm_straightness:
+        arm_perfect, arm_fail = scaled_tolerances(difficulty, *ARM_STRAIGHT_BAND)
+        straight = np.mean([
+            score_by_tolerance(left_elbow_angle_deg, target_arm_angle_deg, arm_perfect, arm_fail),
+            score_by_tolerance(right_elbow_angle_deg, target_arm_angle_deg, arm_perfect, arm_fail),
+        ])
+        arms = float(np.mean([straight, close]))
+    else:
+        arms = close
 
     # --- 3. Legs straight: knee angle vs 180 deg, averaged L/R ---
     knee_perfect, knee_fail = scaled_tolerances(difficulty, *LEG_STRAIGHT_BAND)

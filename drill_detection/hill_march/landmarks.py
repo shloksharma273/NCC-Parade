@@ -31,7 +31,12 @@ class HillMarchFrameMetrics:
     frame_index: int
     timestamp_ms: float
 
-    # KEY SIGNAL + parameter 1: angle between the two legs (separation). Peaks == step extremes.
+    # KEY SIGNAL + parameter 1: how high the kicked leg is raised, in degrees from
+    # vertical, derived from the ankle lift (see _kick_angle). Peaks == kicks.
+    kick_angle_deg: float
+
+    # Angle between the two legs in the image. Informational only: from the front
+    # the stride points at the camera and this collapses to ~15 deg.
     inter_leg_angle_deg: float
 
     # Parameter 2 (arms straight + close to body).
@@ -81,6 +86,27 @@ def _inter_leg_angle(left_hip, left_knee, left_ankle, right_hip, right_knee, rig
     return angle_between(v_left, v_right)
 
 
+def _kick_angle(left_hip, left_ankle, right_hip, right_ankle) -> float:
+    """Kick height as an angle from vertical, from how far the kicked ankle rises.
+
+    A straight leg of length L swung forward by theta lifts the ankle by
+    L * (1 - cos theta), so theta = arccos(1 - lift / L). Only vertical image
+    distances are used, and those are not foreshortened when the leg swings
+    toward the camera, so the angle reads the same from the front and the side.
+    L is the standing leg: the longer of the two hip->ankle lengths in the image
+    (the kicked leg looks shorter whenever it points at the camera).
+    Assumes a roughly level camera and an upright standing leg.
+    """
+    standing_len = max(
+        float(np.linalg.norm(np.subtract(left_ankle, left_hip))),
+        float(np.linalg.norm(np.subtract(right_ankle, right_hip))),
+    )
+    if standing_len <= 1e-6:
+        return float("nan")
+    lift = abs(left_ankle[1] - right_ankle[1]) / standing_len
+    return float(np.degrees(np.arccos(np.clip(1.0 - lift, -1.0, 1.0))))
+
+
 def compute_frame_metrics(
     pose_landmarks,
     frame_index: int,
@@ -108,6 +134,7 @@ def compute_frame_metrics(
     right_foot_px = _to_pixel(pose_landmarks[RIGHT_FOOT_INDEX], width, height)
     nose_px = _to_pixel(pose_landmarks[NOSE], width, height)
 
+    kick_angle = _kick_angle(left_hip_px, left_ankle_px, right_hip_px, right_ankle_px)
     inter_leg_angle = _inter_leg_angle(
         left_hip_px, left_knee_px, left_ankle_px,
         right_hip_px, right_knee_px, right_ankle_px,
@@ -136,6 +163,7 @@ def compute_frame_metrics(
     return HillMarchFrameMetrics(
         frame_index=frame_index,
         timestamp_ms=timestamp_ms,
+        kick_angle_deg=kick_angle,
         inter_leg_angle_deg=inter_leg_angle,
         left_elbow_angle_deg=left_elbow_angle,
         right_elbow_angle_deg=right_elbow_angle,

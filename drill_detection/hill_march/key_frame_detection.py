@@ -21,16 +21,18 @@ def smooth_signal(values: np.ndarray, window: int) -> np.ndarray:
 def find_step_peaks(
     metrics: list[HillMarchFrameMetrics], config: "PipelineConfig"
 ) -> list[HillMarchFrameMetrics]:
-    """Key frames = local MAXIMA of the inter-leg angle (legs maximally separated).
+    """Key frames = local MAXIMA of the kick angle (leg raised highest).
 
     Same prominence / min-distance / smoothing machinery as
     slow_march.key_frame_detection._find_by_inter_leg_angle and
-    kadam_tal.peak_detection.find_knee_peaks.
+    kadam_tal.peak_detection.find_knee_peaks. Peaks below
+    ``config.min_kick_peak_deg`` are ordinary steps between kicks (~30-36 deg on
+    the sample footage) and are dropped.
     """
     if not metrics:
         return []
 
-    angles = np.array([m.inter_leg_angle_deg for m in metrics], dtype=float)
+    angles = np.array([m.kick_angle_deg for m in metrics], dtype=float)
     angles = np.nan_to_num(angles, nan=0.0)  # missing landmarks -> 0 so they never win as peaks
     smoothed = smooth_signal(angles, config.smooth_window)
 
@@ -41,9 +43,10 @@ def find_step_peaks(
         prominence = max(3.0, angle_range * config.min_peak_prominence_ratio)
 
     peak_indices = _find_local_maxima(smoothed, config.min_peak_distance_frames, prominence)
-    # Emit the smoothed separation angle we actually peaked on.
+    peak_indices = [i for i in peak_indices if smoothed[i] >= config.min_kick_peak_deg]
+    # Emit the smoothed kick angle we actually peaked on.
     for i in peak_indices:
-        metrics[i].inter_leg_angle_deg = round(float(smoothed[i]), 2)
+        metrics[i].kick_angle_deg = round(float(smoothed[i]), 2)
     return [metrics[i] for i in peak_indices]
 
 
