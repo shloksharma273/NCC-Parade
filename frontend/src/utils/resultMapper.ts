@@ -60,6 +60,7 @@ export function parameterStatusLabel(status: ParameterStatus | string): string {
     needs_correction: "Needs Correction",
     fail: "Fail",
     incorrect: "Incorrect",
+    not_assessed: "Not Assessed",
   };
   return map[status] ?? status;
 }

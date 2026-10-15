@@ -16,7 +16,7 @@ from mediapipe.tasks.python.vision import (
 
 from ..cadet_crop import CadetTracker, CropBox, place_on_canvas, uncrop_result
 from .config import PipelineConfig
-from .hand_analysis import analyze_hands_for_frames
+from .hand_analysis import NO_HAND, analyze_hands_for_frames
 from .key_frame_detection import find_step_peaks
 from .landmarks import TezChalFrameMetrics, compute_frame_metrics
 from .mediapipe_models import ensure_models
@@ -40,6 +40,7 @@ def _key_frame_to_json(
     image_rel_path: str,
     fist_samples_with_hands: int,
     fist_samples_total: int,
+    fist_not_assessed_reason: str | None,
 ) -> dict:
     return {
         "rank": rank,
@@ -53,6 +54,8 @@ def _key_frame_to_json(
         "right_knee_angle_deg": round(item.right_knee_angle_deg, 2),
         "fist_samples_with_hands": fist_samples_with_hands,  # frames near the key frame that had a detectable hand
         "fist_samples_total": fist_samples_total,
+        # "no_hand" / "hand_too_small" when the fist was not assessed, else None.
+        "fist_not_assessed_reason": fist_not_assessed_reason,
         "score": frame_score.to_dict(),
         "output_image_path": image_rel_path,
     }
@@ -88,7 +91,7 @@ def _draw_annotations(frame: np.ndarray, metrics: TezChalFrameMetrics, frame_sco
     cv2.putText(rendered, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
     breakdown = (
         f"arms {frame_score.arms_straight:.0f}  legs {frame_score.legs_straight:.0f}  "
-        f"fist {frame_score.fist_closed:.0f}"
+        + (f"fist {frame_score.fist_closed:.0f}" if frame_score.fist_closed is not None else "fist n/a")
     )
     cv2.putText(rendered, breakdown, (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 2, cv2.LINE_AA)
     return rendered
@@ -217,6 +220,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         snap_step=config.hand_snap_step,
         frame_count=frame_index,  # total frames read (upper bound for clamping the snap window)
         cadet_boxes=cadet_boxes if config.crop_to_cadet else None,
+        min_hand_size_px=config.fist_min_hand_size_px,
     )
 
     key_frames: list[dict] = []
@@ -231,7 +235,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
             right_elbow_angle_deg=item.right_elbow_angle_deg,
             left_knee_angle_deg=item.left_knee_angle_deg,
             right_knee_angle_deg=item.right_knee_angle_deg,
-            fist_closed_score=hand.fist_score if hand else 0.0,
+            fist_closed_score=hand.fist_score if hand else None,
             hands_detected=hand.hands_detected if hand else 0,
             difficulty=config.difficulty,
             target_arm_angle_deg=config.target_arm_angle_deg,
@@ -257,6 +261,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
             rank, video_path.name, item, frame_score, image_rel_path,
             fist_samples_with_hands=hand.samples_with_hands if hand else 0,
             fist_samples_total=hand.samples_total if hand else 0,
+            fist_not_assessed_reason=(hand.not_assessed_reason if hand else NO_HAND),
         ))
 
     montage_rel = ""
@@ -285,6 +290,8 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
             "total_score": total_score,
             "max_possible_score": iteration_count * 10,
             "average_score_per_step": average_score,
+            # Steps whose fist could be scored; the rest were left out of their total.
+            "fist_assessed_steps": sum(1 for k in key_frames if k["score"]["fist_closed"] is not None),
             "montage_image": montage_rel,
         },
         "peak_frames": key_frames,  # key name "peak_frames" reused for report compatibility

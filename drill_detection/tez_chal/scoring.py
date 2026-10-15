@@ -66,7 +66,7 @@ class FrameScore:
     total: float
     arms_straight: float
     legs_straight: float
-    fist_closed: float
+    fist_closed: float | None  # None == not assessed (hand not visible / too small)
     hands_detected: int  # 0/1/2 — how many hands the IMAGE-mode pass found this frame
 
     def to_dict(self) -> dict:
@@ -74,7 +74,7 @@ class FrameScore:
             "total": round(self.total, 2),
             "arms_straight": round(self.arms_straight, 2),
             "legs_straight": round(self.legs_straight, 2),
-            "fist_closed": round(self.fist_closed, 2),
+            "fist_closed": round(self.fist_closed, 2) if self.fist_closed is not None else None,
             "hands_detected": self.hands_detected,
         }
 
@@ -85,7 +85,7 @@ def score_frame(
     right_elbow_angle_deg: float,
     left_knee_angle_deg: float,
     right_knee_angle_deg: float,
-    fist_closed_score: float,
+    fist_closed_score: float | None,
     hands_detected: int,
     difficulty: float,
     target_arm_angle_deg: float = 180.0,
@@ -97,6 +97,10 @@ def score_frame(
       * arms_straight -> both elbows at 180 deg   (score_by_tolerance)
       * legs_straight -> both knees  at 180 deg   (score_by_tolerance)
       * fist_closed   -> fingers curled to wrist  (already a /10 from hand_analysis)
+
+    A fist that could not be assessed (``fist_closed_score`` None) is left out and
+    the total is the weighted mean of the parameters that were scored, so a camera
+    that cannot see the hands does not cost the cadet marks.
     """
     # --- Arms straight: elbow angle vs 180 deg, averaged L/R ---
     arm_perfect, arm_fail = scaled_tolerances(difficulty, *ARM_STRAIGHT_BAND)
@@ -110,14 +114,13 @@ def score_frame(
     right_leg = score_by_tolerance(right_knee_angle_deg, target_knee_angle_deg, knee_perfect, knee_fail)
     legs_straight = float(np.mean([left_leg, right_leg]))
 
-    # --- Fist closed: computed upstream from hand landmarks (0 when no hand found) ---
+    # --- Fist closed: computed upstream from hand landmarks (None == not assessed) ---
     fist_closed = fist_closed_score
 
-    total = (
-        arms_straight * PARAM_WEIGHTS["arms_straight"]
-        + legs_straight * PARAM_WEIGHTS["legs_straight"]
-        + fist_closed * PARAM_WEIGHTS["fist_closed"]
-    )
+    scored = {"arms_straight": arms_straight, "legs_straight": legs_straight}
+    if fist_closed is not None:
+        scored["fist_closed"] = fist_closed
+    total = sum(v * PARAM_WEIGHTS[k] for k, v in scored.items()) / sum(PARAM_WEIGHTS[k] for k in scored)
 
     return FrameScore(
         total=total,

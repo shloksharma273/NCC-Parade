@@ -97,5 +97,10 @@ class PipelineConfig:
     fist_curl_fail_ratio: float = 0.90
     thumb_on_top_perfect_ratio: float = 0.35
     thumb_on_top_fail_ratio: float = 1.00
+    # Smallest hand (wrist -> middle-finger knuckle, px) whose finger landmarks are
+    # trusted; smaller hands make fist + thumb NOT ASSESSED instead of 0. Judgement
+    # call from sample footage: baju-swing hands were 30-53 px with believable
+    # scores. tez_chal uses 40 px: its hands are motion-blurred mid-march.
+    fist_min_hand_size_px: float = 30.0
     difficulty: float = 2.0
     report_metadata: ReportMetadata | None = None

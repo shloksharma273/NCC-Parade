@@ -11,6 +11,7 @@ const STATUS_COLORS: Record<string, string> = {
   needs_correction: "text-amber-700",
   fail: "text-red-700",
   incorrect: "text-red-700",
+  not_assessed: "text-slate-500",
 };
 
 export function ParameterTable({ parameters }: Props) {
@@ -37,7 +38,9 @@ export function ParameterTable({ parameters }: Props) {
               <td className="px-4 py-4 font-medium">{param.name}</td>
               <td className="px-4 py-4">{param.expected}</td>
               <td className="px-4 py-4">{param.actual}</td>
-              <td className="px-4 py-4">{(param.score * 10).toFixed(1)}/10</td>
+              <td className="px-4 py-4">
+                {param.status === "not_assessed" ? "—" : `${(param.score * 10).toFixed(1)}/10`}
+              </td>
               <td className={`px-4 py-4 font-semibold ${STATUS_COLORS[param.status] ?? ""}`}>
                 {parameterStatusLabel(param.status)}
               </td>

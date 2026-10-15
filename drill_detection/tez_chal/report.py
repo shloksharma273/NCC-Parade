@@ -152,13 +152,23 @@ def _score_cell(rank: int, frame_index: int, total_score: float, styles) -> Para
     return Paragraph(body, styles["CellBody"])
 
 
-def _parameter_cell(score: dict, styles) -> Paragraph:
-    hands = score.get("hands_detected", 0)
-    hand_note = "" if hands else " <font color='red'>(no hand)</font>"
+# Shown instead of a fist score when the camera could not see the hand well enough.
+_FIST_NOT_ASSESSED = {
+    "no_hand": "hand not visible",
+    "hand_too_small": "hand too small in frame",
+}
+
+
+def _parameter_cell(score: dict, fist_reason: str | None, styles) -> Paragraph:
+    if score.get("fist_closed") is None:
+        why = _FIST_NOT_ASSESSED.get(fist_reason or "", "hand not visible")
+        fist = f"<font color='grey'>not assessed ({why})</font>"
+    else:
+        fist = f"{score['fist_closed']:.2f}/10"
     body = (
         f"Arms Straight: {score['arms_straight']:.2f}/10<br/>"
         f"Legs Straight: {score['legs_straight']:.2f}/10<br/>"
-        f"Fist Closed: {score['fist_closed']:.2f}/10{hand_note}"
+        f"Fist Closed: {fist}"
     )
     return Paragraph(body, styles["CellBody"])
 
@@ -219,7 +229,7 @@ def generate_pdf_report(
         )
         score = frame["score"]
         score_cell = _score_cell(rank, frame["frame_index"], score["total"], styles)
-        param_cell = _parameter_cell(score, styles)
+        param_cell = _parameter_cell(score, frame.get("fist_not_assessed_reason"), styles)
         table_data.append([image_cell, score_cell, param_cell])
 
     table = Table(

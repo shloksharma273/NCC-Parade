@@ -49,6 +49,12 @@ class PipelineConfig:
     # strictly on the key frame.
     hand_snap_window: int = 8
     hand_snap_step: int = 2
+    # Smallest hand (wrist -> middle-finger knuckle, in full-frame px) whose finger
+    # landmarks are trusted. Smaller hands make the fist NOT ASSESSED instead of 0.
+    # Judgement call from sample footage: tez-chal hands were 18-27 px, unreadable even
+    # by eye. Higher than baju_swing's 30 px: at 30 a few motion-blurred tez-chal hands
+    # just over the limit still produced near-zero fist scores.
+    fist_min_hand_size_px: float = 40.0
 
     # --- Difficulty knob 0..5 ----------------------------------------------------------
     difficulty: float = 2.0

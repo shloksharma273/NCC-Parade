@@ -57,11 +57,18 @@ _FINGERS = (
 _MIDPOINTS = (INDEX_PIP, MIDDLE_PIP, RING_PIP, PINKY_PIP)
 
 
+# Why a key frame's fist/thumb could not be assessed (HandScore.not_assessed_reason).
+NO_HAND = "no_hand"                # no hand found on the key frame
+HAND_TOO_SMALL = "hand_too_small"  # hands found, but all too small for finger geometry
+
+
 @dataclass
 class HandScore:
     frame_index: int
-    fist_score: float
-    thumb_score: float
+    # /10 each. None == not assessed (see not_assessed_reason): the camera could not
+    # see the hand well enough, which must not cost the cadet marks.
+    fist_score: float | None
+    thumb_score: float | None
     hands_detected: int
     # Fingertip pixel coords (per detected hand) for optional annotation.
     fingertips_px: list[tuple[float, float]] = field(default_factory=list)
@@ -69,6 +76,7 @@ class HandScore:
     # from centroid / hand scale), averaged across detected hands. NaN on side
     # view or when no hand is detected. Reported for calibration.
     fingers_together_spread: float = float("nan")
+    not_assessed_reason: str | None = None
 
 
 def _hand_point(hand_landmarks, index: int, width: int, height: int) -> np.ndarray:
@@ -80,6 +88,13 @@ def _hand_scale(hand_landmarks, width: int, height: int) -> float:
     wrist = _hand_point(hand_landmarks, WRIST, width, height)
     middle_mcp = _hand_point(hand_landmarks, MIDDLE_MCP, width, height)
     return max(float(np.linalg.norm(wrist - middle_mcp)), 1.0)
+
+
+def _hand_size_px(hand_landmarks, width: int, height: int) -> float:
+    """Wrist -> middle-finger knuckle distance in pixels (unclamped _hand_scale)."""
+    wrist = _hand_point(hand_landmarks, WRIST, width, height)
+    middle_mcp = _hand_point(hand_landmarks, MIDDLE_MCP, width, height)
+    return float(np.linalg.norm(wrist - middle_mcp))
 
 
 def _fist_score_for_hand(hand_landmarks, width: int, height: int, perfect: float, fail: float) -> float:
@@ -155,6 +170,7 @@ def analyze_hands_for_frames(
     min_confidence: float,
     difficulty: float,
     view: str,
+    min_hand_size_px: float = 0.0,
 ) -> dict[int, HandScore]:
     """Pass 2: re-run Holistic in IMAGE mode on the key frames and score the
     fist and thumb-on-top (§6.6) for each. Scores both hands and averages them;
@@ -162,7 +178,11 @@ def analyze_hands_for_frames(
     landmarks => that parameter scores 0.
 
     The fist metric depends on the view: SIDE uses finger curl toward the wrist
-    (§6.5); FRONT uses fingers-together via the finger midpoints (§10.3)."""
+    (§6.5); FRONT uses fingers-together via the finger midpoints (§10.3).
+
+    Hands smaller than ``min_hand_size_px`` (wrist -> middle knuckle) are ignored:
+    the finger landmarks are guesswork at that size. With no hand found, or only
+    hands too small, fist and thumb are NOT ASSESSED (None) rather than 0."""
     # Difficulty-scaled hand-ratio thresholds (all flow through scaled_tolerances).
     fist_perfect, fist_fail = scaled_tolerances(difficulty, *cfg.FIST_CURL_BAND)
     thumb_perfect, thumb_fail = scaled_tolerances(difficulty, *cfg.THUMB_GAP_BAND)
@@ -175,7 +195,7 @@ def analyze_hands_for_frames(
         for frame_index in frame_indices:
             frame_bgr = _read_frame_at_index(video_path, frame_index)
             if frame_bgr is None:
-                results[frame_index] = HandScore(frame_index, 0.0, 0.0, 0)
+                results[frame_index] = HandScore(frame_index, None, None, 0, not_assessed_reason=NO_HAND)
                 continue
 
             height, width = frame_bgr.shape[:2]
@@ -185,11 +205,15 @@ def analyze_hands_for_frames(
 
             left_hand = result.left_hand_landmarks or None
             right_hand = result.right_hand_landmarks or None
-            hands = [h for h in (left_hand, right_hand) if h]
+            found = [h for h in (left_hand, right_hand) if h]
+            hands = [h for h in found if _hand_size_px(h, width, height) >= min_hand_size_px]
 
             if not hands:
-                # Missing hand landmarks => fist and thumb score 0 (§6.5/§6.6).
-                results[frame_index] = HandScore(frame_index, 0.0, 0.0, 0)
+                # Hand not visible, or too small to read: not assessed, not 0.
+                results[frame_index] = HandScore(
+                    frame_index, None, None, len(found),
+                    not_assessed_reason=HAND_TOO_SMALL if found else NO_HAND,
+                )
                 continue
 
             # Fist metric is view-dependent (§10.3): FRONT = fingers-together

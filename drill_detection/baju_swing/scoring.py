@@ -64,8 +64,8 @@ class FrameScore:
     total: float
     swing_spread: float
     legs_straight: float
-    fist: float
-    thumb: float
+    fist: float | None   # None == not assessed (hand not visible / too small)
+    thumb: float | None  # None == not assessed (same hand as the fist)
     # None for the FRONT view, where arms_straight is dropped (§10.4).
     arms_straight: float | None = None
 
@@ -74,8 +74,8 @@ class FrameScore:
             "total": round(self.total, 2),
             "swing_spread": round(self.swing_spread, 2),
             "legs_straight": round(self.legs_straight, 2),
-            "fist": round(self.fist, 2),
-            "thumb": round(self.thumb, 2),
+            "fist": round(self.fist, 2) if self.fist is not None else None,
+            "thumb": round(self.thumb, 2) if self.thumb is not None else None,
         }
         if self.arms_straight is not None:
             out["arms_straight"] = round(self.arms_straight, 2)
@@ -89,8 +89,8 @@ def score_swing_frame(
     right_elbow_angle_deg: float,
     left_knee_angle_deg: float,
     right_knee_angle_deg: float,
-    fist_score: float,
-    thumb_score: float,
+    fist_score: float | None,
+    thumb_score: float | None,
     difficulty: float,
     target_arm_angle_deg: float,
     target_inter_arm_angle_deg: float,
@@ -108,6 +108,10 @@ def score_swing_frame(
     5 params; FRONT = cfg.FRONT_WEIGHTS, no arms_straight). A parameter is only
     scored into the total if its key is in ``weights``; arms_straight is left
     None when absent (FRONT view, §10.4).
+
+    fist_score / thumb_score None == not assessed (the camera could not see the
+    hand): they are left out and the total is re-normalised over the weights of
+    the parameters that were scored, so it stays out of 10.
 
     ``swing_spread_score``: FRONT view passes the pre-scored fist height here
     (§10.2). When None (SIDE view), swing spread is scored from the inter-arm
@@ -147,7 +151,8 @@ def score_swing_frame(
         "fist": fist_score,
         "thumb": thumb_score,
     }
-    total = sum(components[k] * w for k, w in weights.items())
+    scored = {k: w for k, w in weights.items() if components[k] is not None}
+    total = sum(components[k] * w for k, w in scored.items()) / sum(scored.values())
 
     return FrameScore(
         total=total,

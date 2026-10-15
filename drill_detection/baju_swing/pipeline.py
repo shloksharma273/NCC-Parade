@@ -14,7 +14,7 @@ from mediapipe.tasks.python.vision import (
 )
 
 from .config import FRONT_VIEW, FRONT_WEIGHTS, WEIGHTS, PipelineConfig
-from .hand_analysis import HandScore, analyze_hands_for_frames
+from .hand_analysis import NO_HAND, HandScore, analyze_hands_for_frames
 from .key_frame_detection import find_swing_peaks
 from .landmarks import BajuSwingFrameMetrics, compute_frame_metrics
 from .mediapipe_models import ensure_models
@@ -60,6 +60,8 @@ def _key_frame_to_json(
         "left_knee_angle_deg": round(item.left_knee_angle_deg, 2),
         "right_knee_angle_deg": round(item.right_knee_angle_deg, 2),
         "hands_detected": hand.hands_detected,
+        # "no_hand" / "hand_too_small" when fist + thumb were not assessed, else None.
+        "fist_not_assessed_reason": hand.not_assessed_reason,
         "score": frame_score.to_dict(),
         "output_image_path": image_rel_path,
     }
@@ -131,7 +133,8 @@ def _draw_annotations(
     lines += [
         f"Swing spread: {frame_score.swing_spread:.1f}/10  ({spread_detail})",
         f"Legs straight: {frame_score.legs_straight:.1f}/10",
-        f"{fist_label}: {frame_score.fist:.1f}/10   Thumb on top: {frame_score.thumb:.1f}/10",
+        (f"{fist_label}: {frame_score.fist:.1f}/10   Thumb on top: {frame_score.thumb:.1f}/10"
+         if frame_score.fist is not None else f"{fist_label} / thumb: not assessed (hand not readable)"),
     ]
     y = 26
     for text in lines:
@@ -245,6 +248,7 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
         min_confidence=config.min_detection_confidence,
         difficulty=config.difficulty,
         view=config.view,
+        min_hand_size_px=config.fist_min_hand_size_px,
     )
 
     weights = FRONT_WEIGHTS if config.view == FRONT_VIEW else WEIGHTS
@@ -253,7 +257,9 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
     frame_totals: list[float] = []
 
     for rank, item in enumerate(key_frames_metrics, start=1):
-        hand = hand_scores.get(item.frame_index, HandScore(item.frame_index, 0.0, 0.0, 0))
+        hand = hand_scores.get(
+            item.frame_index, HandScore(item.frame_index, None, None, 0, not_assessed_reason=NO_HAND)
+        )
         # FRONT view: swing spread = scored hand-tip separation (§10.2). SIDE
         # view leaves it None so scoring uses the inter-arm angle.
         # FRONT view: swing spread = pre-scored fist height (§10.2). SIDE view
@@ -312,6 +318,8 @@ def process_video(video_path: Path, config: PipelineConfig) -> dict:
             "total_score": total_score,                  # sum of per-swing totals
             "max_possible_score": iteration_count * 10,  # iteration_count * 10
             "average_score_per_swing": average_score,    # total_score / iteration_count
+            # Swings whose fist + thumb could be scored; the rest were left out of their total.
+            "fist_assessed_swings": sum(1 for k in key_frames if k["score"]["fist"] is not None),
         },
         "key_frames": key_frames,
     }

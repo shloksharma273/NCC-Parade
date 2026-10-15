@@ -578,6 +578,13 @@ class DrillAnalyzer:
             worst = min(key_frames, key=lambda f: f["score"]["total"])
             summaries.append(f"Best swing: #{best['rank']} scored {best['score']['total']:.2f}/10.")
             summaries.append(f"Weakest swing: #{worst['rank']} scored {worst['score']['total']:.2f}/10.")
+            not_assessed = sum(1 for f in key_frames if f["score"].get("fist") is None)
+            if not_assessed:
+                summaries.append(
+                    f"Fist and thumb not assessed on {not_assessed} of {len(key_frames)} swing(s): the hand "
+                    "was not visible or too small in the frame, so those swings were scored without them. "
+                    "Move the camera closer for a fist score."
+                )
         return summaries
 
     @staticmethod
@@ -595,9 +602,21 @@ class DrillAnalyzer:
 
         parameters = []
         for name, key, expected, feedback in keys:
-            # FRONT view drops arms_straight (§10.4), so a key may be absent.
-            values = [frame["score"][key] for frame in key_frames if key in frame["score"]]
+            # FRONT view drops arms_straight (§10.4), so a key may be absent; fist /
+            # thumb are None when not assessed (camera could not see the hand).
+            values = [frame["score"][key] for frame in key_frames if frame["score"].get(key) is not None]
             if not values:
+                if key in ("fist", "thumb"):
+                    parameters.append(
+                        {
+                            "name": name,
+                            "expected": expected,
+                            "actual": "Hand not visible or too small",
+                            "score": 0.0,
+                            "status": "not_assessed",
+                            "feedback": "Not counted in the score. Move the camera closer to assess the hand.",
+                        }
+                    )
                 continue
             avg = sum(values) / len(values)
             status = "pass" if avg >= 7 else "needs_correction" if avg >= 5 else "fail"
@@ -719,11 +738,12 @@ class DrillAnalyzer:
             worst = min(key_frames, key=lambda f: f["score"]["total"])
             summaries.append(f"Best step: #{best['rank']} scored {best['score']['total']:.2f}/10.")
             summaries.append(f"Weakest step: #{worst['rank']} scored {worst['score']['total']:.2f}/10.")
-            no_hands = sum(1 for f in key_frames if not f["score"].get("hands_detected"))
-            if no_hands:
+            not_assessed = sum(1 for f in key_frames if f["score"].get("fist_closed") is None)
+            if not_assessed:
                 summaries.append(
-                    f"{no_hands} step(s) had no detectable hand (fist scored 0) — likely motion blur; "
-                    "capture the hands more clearly for a reliable fist score."
+                    f"Fist not assessed on {not_assessed} of {len(key_frames)} step(s): the hand was not "
+                    "visible or too small in the frame, so those steps were scored on arms and legs only. "
+                    "Move the camera closer for a fist score."
                 )
         return summaries
 
@@ -740,8 +760,20 @@ class DrillAnalyzer:
 
         parameters = []
         for name, key, expected, feedback in keys:
-            values = [frame["score"][key] for frame in key_frames if key in frame["score"]]
+            # None == not assessed (camera could not see the hand); left out of the average.
+            values = [frame["score"][key] for frame in key_frames if frame["score"].get(key) is not None]
             if not values:
+                if key == "fist_closed":
+                    parameters.append(
+                        {
+                            "name": name,
+                            "expected": expected,
+                            "actual": "Hand not visible or too small",
+                            "score": 0.0,
+                            "status": "not_assessed",
+                            "feedback": "Not counted in the score. Move the camera closer to assess the fist.",
+                        }
+                    )
                 continue
             avg = sum(values) / len(values)
             status = "pass" if avg >= 7 else "needs_correction" if avg >= 5 else "fail"

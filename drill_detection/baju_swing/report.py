@@ -81,7 +81,21 @@ def _score_cell(rank: int, frame_index: int, total_score: float, styles) -> Para
     return Paragraph(body, styles["CellBody"])
 
 
-def _parameter_cell(score: dict, styles) -> Paragraph:
+# Shown instead of fist / thumb scores when the camera could not see the hand well enough.
+_HAND_NOT_ASSESSED = {
+    "no_hand": "hand not visible",
+    "hand_too_small": "hand too small in frame",
+}
+
+
+def _hand_value(value: float | None, reason: str | None) -> str:
+    if value is None:
+        why = _HAND_NOT_ASSESSED.get(reason or "", "hand not visible")
+        return f"<font color='grey'>not assessed ({why})</font>"
+    return f"{value:.2f}/10"
+
+
+def _parameter_cell(score: dict, fist_reason: str | None, styles) -> Paragraph:
     rows = []
     # Arms Straight is only present in the SIDE view (§10.4).
     if "arms_straight" in score:
@@ -89,8 +103,8 @@ def _parameter_cell(score: dict, styles) -> Paragraph:
     rows += [
         f"Swing Spread: {score['swing_spread']:.2f}/10",
         f"Legs Straight: {score['legs_straight']:.2f}/10",
-        f"Fist Closed: {score['fist']:.2f}/10",
-        f"Thumb On Top: {score['thumb']:.2f}/10",
+        f"Fist Closed: {_hand_value(score.get('fist'), fist_reason)}",
+        f"Thumb On Top: {_hand_value(score.get('thumb'), fist_reason)}",
     ]
     return Paragraph("<br/>".join(rows), styles["CellBody"])
 
@@ -155,7 +169,7 @@ def generate_pdf_report(
             image_cell = Paragraph("Image not found", styles["CellBody"])
 
         score_cell = _score_cell(rank, frame["frame_index"], frame["score"]["total"], styles)
-        param_cell = _parameter_cell(frame["score"], styles)
+        param_cell = _parameter_cell(frame["score"], frame.get("fist_not_assessed_reason"), styles)
         table_data.append([image_cell, score_cell, param_cell])
 
     table = Table(

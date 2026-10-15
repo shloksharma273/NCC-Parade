@@ -1,6 +1,6 @@
 export type ReportResult = "pass" | "needs_correction" | "fail";
 
-export type ParameterStatus = "pass" | "needs_correction" | "fail" | "correct" | "incorrect";
+export type ParameterStatus = "pass" | "needs_correction" | "fail" | "correct" | "incorrect" | "not_assessed";
 
 export type DrillParameter = {
   name: string;
